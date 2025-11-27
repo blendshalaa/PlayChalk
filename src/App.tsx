@@ -1,41 +1,110 @@
+import { useState, useRef } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Sidebar } from './components/Sidebar';
 import { Court } from './components/Court';
 import { Timeline } from './components/Timeline';
+import { Header } from './components/Header';
 import { WelcomeTutorial } from './components/WelcomeTutorial';
 import { usePlayStore } from './store/usePlayStore';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 function App() {
   const { showWelcome } = usePlayStore();
+  const [isTimelineOpen, setIsTimelineOpen] = useState(true);
+  const exportFnRef = useRef<(() => void) | null>(null);
+
+  const handleRegisterExport = (callback: () => void) => {
+    exportFnRef.current = callback;
+  };
+
+  const handleExport = () => {
+    if (exportFnRef.current) {
+      exportFnRef.current();
+    }
+  };
 
   return (
     <>
       <Toaster
-        position="top-right"
+        position="top-center"
         toastOptions={{
           duration: 2000,
           style: {
-            background: '#fff',
-            color: '#1f2937',
-            fontWeight: 600,
-            border: '1px solid #e5e7eb',
-            borderRadius: '12px',
-            padding: '12px 16px',
+            background: 'rgba(30, 41, 59, 0.8)',
+            backdropFilter: 'blur(12px)',
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            padding: '12px 20px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
           },
           success: {
             iconTheme: {
-              primary: '#ea580c',
+              primary: '#f97316',
               secondary: '#fff',
             },
           },
         }}
       />
 
-      <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden">
-        <Sidebar />
-        <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          <Court />
-          <Timeline />
+      <AnimatePresence>
+        {showWelcome && <WelcomeTutorial />}
+      </AnimatePresence>
+
+      <div className="relative h-screen w-screen overflow-hidden bg-slate-950">
+        {/* Background Effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-orange-500/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px]" />
+        </div>
+
+        {/* Main Content Layer */}
+        <div className="relative z-10 h-full flex flex-col">
+          {/* Canvas takes full space */}
+          <div className="absolute inset-0 z-0">
+            <Court onRegisterExport={handleRegisterExport} />
+          </div>
+
+          {/* Floating UI Layer */}
+          <div className="relative z-20 h-full pointer-events-none">
+
+            {/* Sidebar floats on left */}
+            <div className="absolute left-6 top-6 bottom-6 w-auto pointer-events-auto">
+              <Sidebar />
+            </div>
+
+            {/* Header floats on top right, offset for Sidebar */}
+            <div className="absolute top-6 left-80 right-6 pointer-events-auto">
+              <Header onExport={handleExport} />
+            </div>
+
+            {/* Timeline floats at bottom */}
+            <div className="absolute bottom-0 left-80 right-6 pointer-events-auto flex flex-col items-end pb-6 pl-6">
+              {/* Toggle Button */}
+              <motion.button
+                layout
+                onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+                className="mb-2 mr-4 p-2 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/10 text-white hover:bg-slate-800 transition-colors shadow-lg"
+                title={isTimelineOpen ? "Collapse Timeline" : "Expand Timeline"}
+              >
+                {isTimelineOpen ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+              </motion.button>
+
+              <AnimatePresence>
+                {isTimelineOpen && (
+                  <motion.div
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 100, opacity: 0 }}
+                    className="w-full"
+                  >
+                    <Timeline />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
       </div>
     </>

@@ -1,110 +1,111 @@
-import { X } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
+import { motion } from 'framer-motion';
 
 export const WelcomeTutorial = () => {
     const { setShowWelcome } = usePlayStore();
 
+    const steps = [
+        {
+            num: 1,
+            title: "Add Players",
+            desc: "Drag offense (O), defense (X), or ball from the sidebar onto the court.",
+            color: "from-orange-400 to-orange-600"
+        },
+        {
+            num: 2,
+            title: "Position & Label",
+            desc: "Double-click players to edit labels. Drag to position them freely.",
+            color: "from-blue-400 to-blue-600"
+        },
+        {
+            num: 3,
+            title: "Add Frames",
+            desc: "Click 'Add Frame' and move players to create smooth animations.",
+            color: "from-purple-400 to-purple-600"
+        },
+        {
+            num: 4,
+            title: "Draw & Animate",
+            desc: "Use line/arrow tools to show movement. Click Play to watch it come alive!",
+            color: "from-green-400 to-green-600"
+        }
+    ];
+
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-orange-600 to-orange-500 p-8 text-white">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-3xl font-bold">Welcome to PlayChalk! 🏀</h2>
-                        <button
-                            onClick={() => setShowWelcome(false)}
-                            className="p-2 rounded-lg hover:bg-white/20 transition-all"
-                        >
-                            <X size={24} strokeWidth={2.5} />
-                        </button>
-                    </div>
-                    <p className="text-orange-100 text-lg">
-                        Design and animate basketball plays in seconds
-                    </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="relative bg-slate-900 border border-white/10 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden"
+            >
+                {/* Decorative Background */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-orange-500/10 rounded-full blur-[100px]" />
+                    <div className="absolute bottom-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-500/10 rounded-full blur-[100px]" />
                 </div>
 
-                {/* Content */}
-                <div className="p-8 space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                        {/* Step 1 */}
-                        <div className="space-y-3">
-                            <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xl">
-                                1
-                            </div>
-                            <h3 className="font-bold text-gray-900 text-lg">Add Players</h3>
-                            <p className="text-gray-600 text-sm">
-                                Drag offense (O), defense (X), or ball from the sidebar onto the court
+                <div className="relative z-10 flex flex-col md:flex-row h-full min-h-[500px]">
+                    {/* Left Side: Hero */}
+                    <div className="w-full md:w-2/5 p-8 md:p-12 flex flex-col justify-between bg-white/5 border-r border-white/5">
+                        <div>
+                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                                Play<span className="text-orange-500">Chalk</span>
+                            </h1>
+                            <p className="text-lg text-gray-300 leading-relaxed">
+                                The most advanced tool for designing basketball plays. Simple, powerful, and beautiful.
                             </p>
                         </div>
 
-                        {/* Step 2 */}
-                        <div className="space-y-3">
-                            <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xl">
-                                2
-                            </div>
-                            <h3 className="font-bold text-gray-900 text-lg">Position & Label</h3>
-                            <p className="text-gray-600 text-sm">
-                                Double-click players to edit labels (1, PG, etc.). Drag to position them
-                            </p>
-                        </div>
-
-                        {/* Step 3 */}
-                        <div className="space-y-3">
-                            <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xl">
-                                3
-                            </div>
-                            <h3 className="font-bold text-gray-900 text-lg">Add Frames</h3>
-                            <p className="text-gray-600 text-sm">
-                                Click "Add Frame" and move players to create animation keyframes
-                            </p>
-                        </div>
-
-                        {/* Step 4 */}
-                        <div className="space-y-3">
-                            <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xl">
-                                4
-                            </div>
-                            <h3 className="font-bold text-gray-900 text-lg">Draw & Animate</h3>
-                            <p className="text-gray-600 text-sm">
-                                Use line/arrow tools to show movement. Click Play to see your animation!
-                            </p>
+                        <div className="mt-8 md:mt-0">
+                            <button
+                                onClick={() => setShowWelcome(false)}
+                                className="group w-full py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg hover:scale-[1.02] transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2"
+                            >
+                                Get Started
+                                <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+                            </button>
                         </div>
                     </div>
 
-                    {/* Quick Tips */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
-                        <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
-                            <span className="text-lg">⚡</span> Quick Tips
-                        </h3>
-                        <ul className="space-y-2 text-sm text-blue-800">
-                            <li className="flex items-start gap-2">
-                                <span className="font-bold">•</span>
-                                <span><strong>Keyboard Shortcuts:</strong> S (Select), L (Line), A (Arrow), Ctrl+Z (Undo)</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="font-bold">•</span>
-                                <span><strong>Delete:</strong> Select object and press Delete or click "Delete Selected"</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="font-bold">•</span>
-                                <span><strong>Save:</strong> Click "Save Play" in header to save your work</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="font-bold">•</span>
-                                <span><strong>Customize:</strong> Change colors and thickness when drawing lines/arrows</span>
-                            </li>
-                        </ul>
-                    </div>
+                    {/* Right Side: Steps */}
+                    <div className="w-full md:w-3/5 p-8 md:p-12 bg-black/20">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {steps.map((step, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                                >
+                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center font-bold text-white text-lg mb-4 shadow-lg`}>
+                                        {step.num}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                                    <p className="text-sm text-gray-400 leading-relaxed">
+                                        {step.desc}
+                                    </p>
+                                </motion.div>
+                            ))}
+                        </div>
 
-                    {/* Action Button */}
-                    <button
-                        onClick={() => setShowWelcome(false)}
-                        className="w-full py-4 rounded-xl bg-orange-600 text-white font-bold text-lg hover:bg-orange-700 transition-all shadow-lg hover:scale-105"
-                    >
-                        Get Started →
-                    </button>
+                        <div className="mt-8 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                            <p className="text-sm text-blue-200 text-center font-medium">
+                                💡 <span className="font-bold text-white">Pro Tip:</span> Use keyboard shortcuts (S, L, A) to work faster!
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                {/* Close Button */}
+                <button
+                    onClick={() => setShowWelcome(false)}
+                    className="absolute top-6 right-6 p-2 rounded-full bg-black/20 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                >
+                    <X size={24} />
+                </button>
+            </motion.div>
         </div>
     );
 };

@@ -1,33 +1,240 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Arc, Arrow, Text as KonvaText } from 'react-konva';
+import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Arc, Arrow, Text as KonvaText, RegularPolygon } from 'react-konva';
 import Konva from 'konva';
-import { Download, MousePointer2, Trash2 } from 'lucide-react';
+import { MousePointer2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePlayStore } from '../store/usePlayStore';
 import type { PlayObject } from '../types';
-import { Header } from './Header';
 
 const WIDTH = 800;
 const HEIGHT = 600;
 
+interface CourtProps {
+    onRegisterExport: (callback: () => void) => void;
+}
+
 const CourtBackground = () => {
+    // Simplified court with better visibility
+    const courtWidth = 700;
+    const courtHeight = 400;
+    const offsetX = (WIDTH - courtWidth) / 2;
+    const offsetY = (HEIGHT - courtHeight) / 2;
+
     return (
         <Group>
-            <Rect width={WIDTH} height={HEIGHT} fill="#eecfa1" />
-            <Rect x={40} y={40} width={WIDTH - 80} height={HEIGHT - 80} stroke="white" strokeWidth={4} />
-            <KonvaCircle x={WIDTH / 2} y={HEIGHT / 2} radius={60} stroke="white" strokeWidth={4} />
-            <Line points={[WIDTH / 2, 40, WIDTH / 2, HEIGHT - 40]} stroke="white" strokeWidth={4} />
-            <Rect x={40} y={HEIGHT / 2 - 80} width={150} height={160} stroke="white" strokeWidth={4} />
-            <Arc x={190} y={HEIGHT / 2} innerRadius={0} outerRadius={80} angle={180} rotation={-90} stroke="white" strokeWidth={4} />
-            <Rect x={WIDTH - 190} y={HEIGHT / 2 - 80} width={150} height={160} stroke="white" strokeWidth={4} />
-            <Arc x={WIDTH - 190} y={HEIGHT / 2} innerRadius={0} outerRadius={80} angle={180} rotation={90} stroke="white" strokeWidth={4} />
-            <Arc x={90} y={HEIGHT / 2} innerRadius={0} outerRadius={250} angle={180} rotation={-90} stroke="white" strokeWidth={4} />
-            <Arc x={WIDTH - 90} y={HEIGHT / 2} innerRadius={0} outerRadius={250} angle={180} rotation={90} stroke="white" strokeWidth={4} />
+            {/* Floor Base - Wood Color */}
+            <Rect width={WIDTH} height={HEIGHT} fill="#d4a373" />
+
+            {/* Wood Planks Pattern */}
+            {Array.from({ length: 60 }).map((_, i) => (
+                <Rect
+                    key={i}
+                    x={0}
+                    y={i * (HEIGHT / 60)}
+                    width={WIDTH}
+                    height={HEIGHT / 60}
+                    fill={i % 2 === 0 ? "rgba(0,0,0,0.03)" : "transparent"}
+                />
+            ))}
+
+            {/* Court Boundary */}
+            <Rect
+                x={offsetX}
+                y={offsetY}
+                width={courtWidth}
+                height={courtHeight}
+                stroke="white"
+                strokeWidth={4}
+                shadowColor="black"
+                shadowBlur={3}
+                shadowOpacity={0.2}
+            />
+
+            {/* Center Court Line */}
+            <Line
+                points={[WIDTH / 2, offsetY, WIDTH / 2, offsetY + courtHeight]}
+                stroke="white"
+                strokeWidth={4}
+            />
+
+            {/* Center Circle */}
+            <KonvaCircle
+                x={WIDTH / 2}
+                y={HEIGHT / 2}
+                radius={50}
+                stroke="white"
+                strokeWidth={4}
+            />
+            <KonvaCircle
+                x={WIDTH / 2}
+                y={HEIGHT / 2}
+                radius={10}
+                fill="white"
+            />
+
+            {/* LEFT SIDE */}
+            <Group>
+                {/* Key (Paint) */}
+                <Rect
+                    x={offsetX}
+                    y={HEIGHT / 2 - 80}
+                    width={150}
+                    height={160}
+                    fill="rgba(234, 88, 12, 0.2)"
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Free Throw Circle */}
+                <Arc
+                    x={offsetX + 150}
+                    y={HEIGHT / 2}
+                    innerRadius={0}
+                    outerRadius={50}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+                <Arc
+                    x={offsetX + 150}
+                    y={HEIGHT / 2}
+                    innerRadius={0}
+                    outerRadius={50}
+                    angle={180}
+                    rotation={90}
+                    stroke="white"
+                    strokeWidth={4}
+                    dash={[10, 10]}
+                />
+
+                {/* 3-Point Line */}
+                <Arc
+                    x={offsetX + 30}
+                    y={HEIGHT / 2}
+                    innerRadius={0}
+                    outerRadius={200}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Hoop */}
+                <Line
+                    points={[offsetX + 26, HEIGHT / 2 - 25, offsetX + 26, HEIGHT / 2 + 25]}
+                    stroke="white"
+                    strokeWidth={4}
+                    shadowColor="black"
+                    shadowBlur={5}
+                />
+                <KonvaCircle
+                    x={offsetX + 38}
+                    y={HEIGHT / 2}
+                    radius={8}
+                    stroke="#ea580c"
+                    strokeWidth={3}
+                />
+            </Group>
+
+            {/* RIGHT SIDE */}
+            <Group>
+                {/* Key (Paint) */}
+                <Rect
+                    x={offsetX + courtWidth - 150}
+                    y={HEIGHT / 2 - 80}
+                    width={150}
+                    height={160}
+                    fill="rgba(234, 88, 12, 0.2)"
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Free Throw Circle */}
+                <Arc
+                    x={offsetX + courtWidth - 150}
+                    y={HEIGHT / 2}
+                    innerRadius={0}
+                    outerRadius={50}
+                    angle={180}
+                    rotation={90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+                <Arc
+                    x={offsetX + courtWidth - 150}
+                    y={HEIGHT / 2}
+                    innerRadius={0}
+                    outerRadius={50}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={4}
+                    dash={[10, 10]}
+                />
+
+                {/* 3-Point Line */}
+                <Arc
+                    x={offsetX + courtWidth - 30}
+                    y={HEIGHT / 2}
+                    innerRadius={0}
+                    outerRadius={200}
+                    angle={180}
+                    rotation={90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Hoop */}
+                <Line
+                    points={[offsetX + courtWidth - 26, HEIGHT / 2 - 25, offsetX + courtWidth - 26, HEIGHT / 2 + 25]}
+                    stroke="white"
+                    strokeWidth={4}
+                    shadowColor="black"
+                    shadowBlur={5}
+                />
+                <KonvaCircle
+                    x={offsetX + courtWidth - 38}
+                    y={HEIGHT / 2}
+                    radius={8}
+                    stroke="#ea580c"
+                    strokeWidth={3}
+                />
+            </Group>
+
+            {/* Court Shine Effect - Diagonal gradient overlay */}
+            <Rect
+                width={WIDTH}
+                height={HEIGHT}
+                fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+                fillLinearGradientEndPoint={{ x: WIDTH, y: HEIGHT }}
+                fillLinearGradientColorStops={[
+                    0, 'rgba(255,255,255,0.15)',
+                    0.3, 'transparent',
+                    0.7, 'transparent',
+                    1, 'rgba(0,0,0,0.15)'
+                ]}
+                listening={false}
+            />
+
+            {/* Additional shine highlights */}
+            <Rect
+                x={WIDTH * 0.2}
+                y={HEIGHT * 0.1}
+                width={WIDTH * 0.3}
+                height={HEIGHT * 0.2}
+                fillRadialGradientStartPoint={{ x: WIDTH * 0.15, y: HEIGHT * 0.1 }}
+                fillRadialGradientEndPoint={{ x: WIDTH * 0.15, y: HEIGHT * 0.1 }}
+                fillRadialGradientStartRadius={0}
+                fillRadialGradientEndRadius={150}
+                fillRadialGradientColorStops={[0, 'rgba(255,255,255,0.1)', 1, 'transparent']}
+                listening={false}
+            />
         </Group>
     );
 };
 
-export const Court = () => {
+export const Court = ({ onRegisterExport }: CourtProps) => {
     const {
         frames,
         currentFrameIndex,
@@ -96,7 +303,7 @@ export const Court = () => {
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.target instanceof HTMLInputElement) return; // Don't trigger when typing
+            if (e.target instanceof HTMLInputElement) return;
 
             if (e.ctrlKey || e.metaKey) {
                 if (e.key === 'z') {
@@ -186,27 +393,25 @@ export const Court = () => {
         }
     };
 
-    const handleExportImage = () => {
-        if (!stageRef.current) return;
-        const uri = stageRef.current.toDataURL();
-        const link = document.createElement('a');
-        link.download = `playchalk-frame-${currentFrameIndex + 1}.png`;
-        link.href = uri;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    // Register export function
+    useEffect(() => {
+        if (onRegisterExport) {
+            onRegisterExport(() => {
+                if (!stageRef.current) return;
+                const uri = stageRef.current.toDataURL();
+                const link = document.createElement('a');
+                link.download = `playchalk-frame-${currentFrameIndex + 1}.png`;
+                link.href = uri;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+    }, [onRegisterExport, currentFrameIndex]);
 
     const handleObjectClick = (objId: string) => {
         if (currentTool !== 'select') return;
         setSelectedObject(objId);
-    };
-
-    const handleDeleteSelected = () => {
-        if (selectedObjectId) {
-            deleteObject(selectedObjectId);
-            setSelectedObject(null);
-        }
     };
 
     const handleLabelEdit = (objId: string, currentLabel?: string) => {
@@ -222,47 +427,26 @@ export const Court = () => {
     };
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden">
-            <Header />
-
-            <div className="flex-1 bg-gray-50 flex flex-col overflow-hidden relative" onDrop={handleDrop} onDragOver={handleDragOver}>
-                {/* Export Button */}
-                <div className="absolute top-6 right-6 z-10 flex items-center gap-3">
-                    {selectedObjectId && (
-                        <button
-                            onClick={handleDeleteSelected}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-all shadow-lg font-semibold text-sm"
-                        >
-                            <Trash2 size={16} strokeWidth={2.5} />
-                            Delete Selected
-                        </button>
-                    )}
-                    <button
-                        onClick={handleExportImage}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 text-white hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/30 hover:scale-105 font-semibold text-sm"
-                    >
-                        <Download size={18} strokeWidth={2.5} />
-                        Export Image
-                    </button>
-                </div>
+        <div className="h-full w-full flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden relative" onDrop={handleDrop} onDragOver={handleDragOver}>
 
                 {/* Canvas Area */}
-                <div className="flex-1 flex items-center justify-center p-8 relative">
+                <div className="absolute inset-0 flex items-center justify-center p-8 overflow-auto">
                     {isEmpty && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="text-center max-w-md">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
-                                    <MousePointer2 size={32} className="text-orange-600" strokeWidth={2} />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                            <div className="text-center max-w-md p-8 rounded-3xl bg-black/20 backdrop-blur-sm border border-white/10">
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-500/20 flex items-center justify-center">
+                                    <MousePointer2 size={32} className="text-orange-500" strokeWidth={2} />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">Get Started</h3>
-                                <p className="text-gray-500 font-medium">
-                                    Drag players from the sidebar onto the court to start designing your play
+                                <h3 className="text-xl font-bold text-white mb-2">Get Started</h3>
+                                <p className="text-gray-400 font-medium">
+                                    Drag players or equipment from the sidebar onto the court
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    <div className="shadow-2xl rounded-3xl overflow-hidden border-4 border-white">
+                    <div className="shadow-2xl rounded-xl overflow-hidden border-[10px] border-[#5c2b0c] bg-[#d4a373] relative z-0">
                         <Stage
                             width={WIDTH}
                             height={HEIGHT}
@@ -282,7 +466,7 @@ export const Court = () => {
                                 ))}
                                 {isDrawing && currentLine.length > 0 && (
                                     currentTool === 'arrow' ? (
-                                        <Arrow points={currentLine} stroke="yellow" strokeWidth={2} fill="yellow" dash={[5, 5]} />
+                                        <Arrow points={currentLine} stroke="yellow" strokeWidth={2} dash={[5, 5]} />
                                     ) : (
                                         <Line points={currentLine} stroke="yellow" strokeWidth={2} dash={[5, 5]} />
                                     )
@@ -298,16 +482,55 @@ export const Court = () => {
                                             y={obj.y}
                                             draggable={!isPlaying && currentTool === 'select'}
                                             ref={(node) => { if (node) nodeRefs.current[obj.id] = node; }}
+
+                                            dragBoundFunc={(pos) => {
+                                                const radius = 20;
+                                                return {
+                                                    x: Math.max(radius, Math.min(WIDTH - radius, pos.x)),
+                                                    y: Math.max(radius, Math.min(HEIGHT - radius, pos.y)),
+                                                };
+                                            }}
+
                                             onDragEnd={(e) => updateObjectPosition(currentFrameIndex, obj.id, e.target.x(), e.target.y())}
                                             onClick={() => handleObjectClick(obj.id)}
                                             onDblClick={() => handleLabelEdit(obj.id, obj.label)}
+
+                                            onMouseEnter={(e) => {
+                                                if (currentTool === 'select') {
+                                                    const container = e.target.getStage()?.container();
+                                                    if (container) container.style.cursor = 'grab';
+                                                    e.target.to({ scaleX: 1.1, scaleY: 1.1, duration: 0.1 });
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (currentTool === 'select') {
+                                                    const container = e.target.getStage()?.container();
+                                                    if (container) container.style.cursor = 'default';
+                                                    e.target.to({ scaleX: 1, scaleY: 1, duration: 0.1 });
+                                                }
+                                            }}
+                                            onDragStart={(e) => {
+                                                const container = e.target.getStage()?.container();
+                                                if (container) container.style.cursor = 'grabbing';
+                                                e.target.to({ scaleX: 1.2, scaleY: 1.2, duration: 0.1 });
+                                            }}
                                         >
+                                            {/* Selection glow */}
                                             {isSelected && (
-                                                <KonvaCircle radius={25} stroke="#f97316" strokeWidth={2} dash={[5, 5]} />
+                                                <>
+                                                    <KonvaCircle radius={30} fill="rgba(249, 115, 22, 0.2)" />
+                                                    <KonvaCircle radius={25} stroke="#f97316" strokeWidth={2} dash={[5, 5]} />
+                                                </>
                                             )}
+
+                                            {/* Render different object types */}
                                             {obj.type === 'player_offense' && (
                                                 <>
-                                                    <KonvaCircle radius={15} fill="transparent" stroke={obj.color || "#ea580c"} strokeWidth={3} />
+                                                    {/* Glow effect for selected */}
+                                                    {isSelected && (
+                                                        <KonvaCircle radius={18} fill="rgba(249, 115, 22, 0.3)" blur={10} />
+                                                    )}
+                                                    <KonvaCircle radius={15} fill="white" stroke={obj.color || "#ea580c"} strokeWidth={3} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
                                                     {obj.label && (
                                                         <KonvaText
                                                             text={obj.label}
@@ -324,14 +547,57 @@ export const Court = () => {
                                                     )}
                                                 </>
                                             )}
+
                                             {obj.type === 'player_defense' && (
                                                 <>
-                                                    <Line points={[-12, -12, 12, 12]} stroke={obj.color || "#2563eb"} strokeWidth={4} />
-                                                    <Line points={[12, -12, -12, 12]} stroke={obj.color || "#2563eb"} strokeWidth={4} />
+                                                    {isSelected && (
+                                                        <KonvaCircle radius={18} fill="rgba(37, 99, 235, 0.3)" blur={10} />
+                                                    )}
+                                                    <Line points={[-12, -12, 12, 12]} stroke={obj.color || "#2563eb"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                    <Line points={[12, -12, -12, 12]} stroke={obj.color || "#2563eb"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
                                                 </>
                                             )}
+
                                             {obj.type === 'ball' && (
-                                                <KonvaCircle radius={10} fill="#ea580c" stroke="black" strokeWidth={1} />
+                                                <>
+                                                    {isSelected && (
+                                                        <KonvaCircle radius={13} fill="rgba(249, 115, 22, 0.3)" blur={10} />
+                                                    )}
+                                                    {/* Ball with gradient for depth */}
+                                                    <KonvaCircle
+                                                        radius={10}
+                                                        fillRadialGradientStartPoint={{ x: -3, y: -3 }}
+                                                        fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                                                        fillRadialGradientStartRadius={0}
+                                                        fillRadialGradientEndRadius={10}
+                                                        fillRadialGradientColorStops={[0, '#ff8c42', 1, '#ea580c']}
+                                                        stroke="black"
+                                                        strokeWidth={1}
+                                                        shadowColor="black"
+                                                        shadowBlur={8}
+                                                        shadowOpacity={0.4}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {obj.type === 'screen' && (
+                                                <>
+                                                    <Rect x={-20} y={-20} width={40} height={40} fill="transparent" />
+                                                    {isSelected && (
+                                                        <KonvaCircle radius={20} fill="rgba(147, 51, 234, 0.3)" blur={10} />
+                                                    )}
+                                                    <Line points={[0, -15, 0, 15]} stroke={obj.color || "#9333ea"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                    <Line points={[-15, 15, 15, 15]} stroke={obj.color || "#9333ea"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                </>
+                                            )}
+
+                                            {obj.type === 'cone' && (
+                                                <>
+                                                    {isSelected && (
+                                                        <KonvaCircle radius={18} fill="rgba(249, 115, 22, 0.3)" blur={10} />
+                                                    )}
+                                                    <RegularPolygon sides={3} radius={15} fill={obj.color || "#f97316"} stroke="black" strokeWidth={1} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                </>
                                             )}
                                         </Group>
                                     );
@@ -343,15 +609,15 @@ export const Court = () => {
 
                 {/* Label Edit Modal */}
                 {editingLabel && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Edit Player Label</h3>
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4">
+                            <h3 className="text-lg font-bold text-white mb-4">Edit Player Label</h3>
                             <input
                                 type="text"
                                 value={labelInput}
                                 onChange={(e) => setLabelInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleLabelSave()}
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-semibold focus:outline-none focus:border-orange-600"
+                                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl font-semibold text-white focus:outline-none focus:border-orange-500"
                                 placeholder="Enter label (e.g., 1, PG, C)"
                                 autoFocus
                                 maxLength={3}
@@ -359,13 +625,13 @@ export const Court = () => {
                             <div className="flex gap-3 mt-4">
                                 <button
                                     onClick={() => setEditingLabel(null)}
-                                    className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold"
+                                    className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 font-semibold transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleLabelSave}
-                                    className="flex-1 px-4 py-2.5 rounded-xl bg-orange-600 text-white hover:bg-orange-700 font-semibold"
+                                    className="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-semibold transition-all"
                                 >
                                     Save
                                 </button>

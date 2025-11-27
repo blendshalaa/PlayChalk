@@ -1,4 +1,4 @@
-export type PlayerType = 'player_offense' | 'player_defense' | 'ball';
+export type PlayerType = 'player_offense' | 'player_defense' | 'ball' | 'screen' | 'cone';
 
 export interface PlayObject {
     id: string;
@@ -66,6 +66,7 @@ export interface PlayState {
     savedPlays: SavedPlay[];
     currentPlayId: string | null;
     showWelcome: boolean;
+    isLooping: boolean;
 
     // Actions
     addFrame: () => void;
@@ -99,4 +100,7 @@ export interface PlayState {
     deletePlay: (playId: string) => void;
     createNewPlay: () => void;
     setShowWelcome: (show: boolean) => void;
+    toggleLoop: () => void;
+    stepForward: () => void;
+    stepBackward: () => void;
 }

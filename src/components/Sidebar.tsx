@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, MousePointer2, Pencil, ArrowRight, HelpCircle, Palette } from 'lucide-react';
+import { X, MousePointer2, Pencil, ArrowRight, Palette } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PRESET_COLORS = [
     { name: 'White', value: '#ffffff' },
@@ -32,191 +33,198 @@ export const Sidebar = () => {
     const showDrawingControls = currentTool === 'line' || currentTool === 'arrow';
 
     return (
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-screen">
-            <div className="p-6 border-b border-gray-200">
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                    Play<span className="text-orange-600">Chalk</span>
+        <motion.div
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="w-72 h-full glass-panel rounded-3xl flex flex-col overflow-hidden"
+        >
+            {/* Logo Area */}
+            <div className="p-6 border-b border-white/5 bg-white/5">
+                <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                    <span className="text-orange-500">Play</span>Chalk
                 </h1>
-                <p className="text-gray-500 text-sm mt-1 font-medium">Design basketball plays</p>
+                <p className="text-gray-400 text-xs mt-1 font-medium">Pro Play Designer</p>
             </div>
 
-            <div className="p-6 space-y-8 overflow-y-auto flex-1">
+            <div className="p-4 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
                 {/* Players Section */}
                 <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                            Players
-                        </h2>
-                        <div className="group relative">
-                            <HelpCircle size={14} className="text-gray-400 cursor-help" />
-                            <div className="absolute right-0 top-6 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                                Drag players onto the court to start
-                            </div>
-                        </div>
-                    </div>
+                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">
+                        Players & Objects
+                    </h2>
                     <div className="grid grid-cols-2 gap-3">
-                        <div
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, 'player_offense')}
-                            className="bg-white border-2 border-gray-200 hover:border-orange-500 p-4 rounded-2xl flex flex-col items-center gap-3 cursor-grab active:cursor-grabbing hover:shadow-lg transition-all hover:-translate-y-0.5 group relative"
-                            title="Drag to add offensive player"
-                        >
-                            <div className="w-12 h-12 rounded-full border-3 border-orange-600 flex items-center justify-center text-orange-600 font-bold text-xl">
-                                O
-                            </div>
-                            <span className="text-xs text-gray-700 font-semibold">Offense</span>
-                            <div className="absolute -top-2 -right-2 w-5 h-5 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                +
-                            </div>
-                        </div>
+                        <DraggableItem
+                            type="player_offense"
+                            label="Offense"
+                            onDragStart={handleDragStart}
+                            icon={
+                                <div className="w-10 h-10 rounded-full border-2 border-orange-500 flex items-center justify-center text-orange-500 font-bold text-lg shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                                    O
+                                </div>
+                            }
+                        />
+                        <DraggableItem
+                            type="player_defense"
+                            label="Defense"
+                            onDragStart={handleDragStart}
+                            icon={
+                                <div className="w-10 h-10 flex items-center justify-center text-blue-500 font-bold">
+                                    <X size={32} strokeWidth={3} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                                </div>
+                            }
+                        />
+                        <DraggableItem
+                            type="ball"
+                            label="Ball"
+                            onDragStart={handleDragStart}
+                            className="col-span-2"
+                            icon={
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/20"></div>
+                            }
+                        />
+                    </div>
+                </div>
 
-                        <div
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, 'player_defense')}
-                            className="bg-white border-2 border-gray-200 hover:border-blue-500 p-4 rounded-2xl flex flex-col items-center gap-3 cursor-grab active:cursor-grabbing hover:shadow-lg transition-all hover:-translate-y-0.5 group relative"
-                            title="Drag to add defensive player"
-                        >
-                            <div className="w-12 h-12 flex items-center justify-center text-blue-600 font-bold">
-                                <X size={40} strokeWidth={3} />
-                            </div>
-                            <span className="text-xs text-gray-700 font-semibold">Defense</span>
-                            <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                +
-                            </div>
-                        </div>
-
-                        <div
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, 'ball')}
-                            className="bg-white border-2 border-gray-200 hover:border-orange-600 p-4 rounded-2xl flex flex-col items-center gap-3 cursor-grab active:cursor-grabbing hover:shadow-lg transition-all hover:-translate-y-0.5 col-span-2 group relative"
-                            title="Drag to add basketball"
-                        >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 shadow-md"></div>
-                            <span className="text-xs text-gray-700 font-semibold">Basketball</span>
-                            <div className="absolute -top-2 -right-2 w-5 h-5 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                +
-                            </div>
-                        </div>
+                {/* Equipment Section */}
+                <div>
+                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">
+                        Equipment
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3">
+                        <DraggableItem
+                            type="screen"
+                            label="Screen"
+                            onDragStart={handleDragStart}
+                            icon={
+                                <div className="text-purple-500 font-bold text-2xl drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]">
+                                    ⊥
+                                </div>
+                            }
+                        />
+                        <DraggableItem
+                            type="cone"
+                            label="Cone"
+                            onDragStart={handleDragStart}
+                            icon={
+                                <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[24px] border-b-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]"></div>
+                            }
+                        />
                     </div>
                 </div>
 
                 {/* Tools Section */}
                 <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                            Tools
-                        </h2>
-                        <div className="group relative">
-                            <HelpCircle size={14} className="text-gray-400 cursor-help" />
-                            <div className="absolute right-0 top-6 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                                <strong>Select:</strong> Move & edit players<br />
-                                <strong>Line:</strong> Draw movement paths<br />
-                                <strong>Arrow:</strong> Show passes & cuts
-                            </div>
-                        </div>
-                    </div>
+                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">
+                        Tools
+                    </h2>
                     <div className="space-y-2">
-                        <button
+                        <ToolButton
+                            active={currentTool === 'select'}
                             onClick={() => setTool('select')}
-                            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold text-sm transition-all group relative ${currentTool === 'select'
-                                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
-                                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                }`}
-                            title="Select and move objects (S)"
-                        >
-                            <MousePointer2 size={20} strokeWidth={2.5} />
-                            <span>Select & Move</span>
-                            <span className={`ml-auto text-xs ${currentTool === 'select' ? 'text-orange-200' : 'text-gray-400'}`}>S</span>
-                        </button>
-                        <button
+                            icon={<MousePointer2 size={18} />}
+                            label="Select & Move"
+                            shortcut="S"
+                        />
+                        <ToolButton
+                            active={currentTool === 'line'}
                             onClick={() => setTool('line')}
-                            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold text-sm transition-all group relative ${currentTool === 'line'
-                                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
-                                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                }`}
-                            title="Draw lines (L)"
-                        >
-                            <Pencil size={20} strokeWidth={2.5} />
-                            <span>Draw Line</span>
-                            <span className={`ml-auto text-xs ${currentTool === 'line' ? 'text-orange-200' : 'text-gray-400'}`}>L</span>
-                        </button>
-                        <button
+                            icon={<Pencil size={18} />}
+                            label="Draw Line"
+                            shortcut="L"
+                        />
+                        <ToolButton
+                            active={currentTool === 'arrow'}
                             onClick={() => setTool('arrow')}
-                            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold text-sm transition-all group relative ${currentTool === 'arrow'
-                                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
-                                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                }`}
-                            title="Draw arrows (A)"
-                        >
-                            <ArrowRight size={20} strokeWidth={2.5} />
-                            <span>Draw Arrow</span>
-                            <span className={`ml-auto text-xs ${currentTool === 'arrow' ? 'text-orange-200' : 'text-gray-400'}`}>A</span>
-                        </button>
+                            icon={<ArrowRight size={18} />}
+                            label="Draw Arrow"
+                            shortcut="A"
+                        />
                     </div>
                 </div>
 
                 {/* Drawing Controls */}
-                {showDrawingControls && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-blue-900">
-                            <Palette size={16} />
-                            <h3 className="text-xs font-bold uppercase tracking-wider">Drawing Style</h3>
-                        </div>
+                <AnimatePresence>
+                    {showDrawingControls && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-4 overflow-hidden"
+                        >
+                            <div className="flex items-center gap-2 text-blue-400">
+                                <Palette size={14} />
+                                <h3 className="text-[10px] font-bold uppercase tracking-widest">Style</h3>
+                            </div>
 
-                        {/* Color Picker */}
-                        <div>
-                            <label className="text-xs font-semibold text-blue-900 mb-2 block">Color</label>
+                            {/* Color Picker */}
                             <div className="grid grid-cols-4 gap-2">
                                 {PRESET_COLORS.map((color) => (
                                     <button
                                         key={color.value}
                                         onClick={() => setAnnotationColor(color.value)}
                                         className={`w-full aspect-square rounded-lg border-2 transition-all hover:scale-110 ${annotationColor === color.value
-                                                ? 'border-blue-600 ring-2 ring-blue-600 ring-offset-2'
-                                                : 'border-gray-300'
+                                            ? 'border-white ring-2 ring-white/20'
+                                            : 'border-transparent hover:border-white/50'
                                             }`}
                                         style={{ backgroundColor: color.value }}
                                         title={color.name}
                                     />
                                 ))}
                             </div>
-                        </div>
 
-                        {/* Stroke Width */}
-                        <div>
-                            <label className="text-xs font-semibold text-blue-900 mb-2 block">Thickness</label>
+                            {/* Stroke Width */}
                             <div className="flex gap-2">
                                 {STROKE_WIDTHS.map((width) => (
                                     <button
                                         key={width}
                                         onClick={() => setAnnotationStrokeWidth(width)}
-                                        className={`flex-1 py-2 rounded-lg border-2 transition-all font-semibold text-xs ${annotationStrokeWidth === width
-                                                ? 'border-blue-600 bg-blue-600 text-white'
-                                                : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400'
+                                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${annotationStrokeWidth === width
+                                            ? 'bg-white text-black'
+                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                             }`}
                                     >
                                         {width}px
                                     </button>
                                 ))}
                             </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Tips Section */}
-                <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
-                    <h3 className="text-sm font-bold text-orange-900 mb-2 flex items-center gap-2">
-                        <HelpCircle size={16} />
-                        Quick Tips
-                    </h3>
-                    <ul className="text-xs text-orange-800 space-y-1.5 font-medium">
-                        <li>• <strong>Double-click</strong> players to edit labels</li>
-                        <li>• <strong>Click</strong> to select, then delete</li>
-                        <li>• <strong>Ctrl+Z/Y</strong> to undo/redo</li>
-                        <li>• Use <strong>Export Image</strong> to save</li>
-                    </ul>
-                </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
-        </div>
+        </motion.div>
     );
 };
+
+const DraggableItem = ({ type, label, icon, onDragStart, className = '' }: any) => (
+    <div
+        draggable
+        onDragStart={(e) => onDragStart(e, type)}
+        className={`glass-button p-3 rounded-xl flex flex-col items-center gap-2 cursor-grab active:cursor-grabbing group relative ${className}`}
+    >
+        <div className="group-hover:scale-110 transition-transform duration-300">
+            {icon}
+        </div>
+        <span className="text-[10px] font-medium text-gray-300 group-hover:text-white transition-colors">
+            {label}
+        </span>
+        <div className="absolute top-2 right-2 w-4 h-4 bg-white/10 rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity">
+            +
+        </div>
+    </div>
+);
+
+const ToolButton = ({ active, onClick, icon, label, shortcut }: any) => (
+    <button
+        onClick={onClick}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all group relative ${active
+            ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+            : 'glass-button text-gray-300 hover:text-white'
+            }`}
+    >
+        {icon}
+        <span>{label}</span>
+        <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded ${active ? 'bg-white/20' : 'bg-white/5 text-gray-500'}`}>
+            {shortcut}
+        </span>
+    </button>
+);

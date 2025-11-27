@@ -1,178 +1,241 @@
-import { usePlayStore } from '../store/usePlayStore';
-import { Plus, Trash2, Copy, Play, Pause, Clock } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useState } from 'react';
+import { Play, Pause, Plus, Trash2, Copy, Clock, SkipForward, SkipBack, Repeat } from 'lucide-react';
+import { usePlayStore } from '../store/usePlayStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export const Timeline = () => {
     const {
         frames,
         currentFrameIndex,
-        setCurrentFrame,
         addFrame,
         deleteFrame,
         duplicateFrame,
+        setCurrentFrame,
         isPlaying,
         togglePlay,
-        setFrameDuration
+        playbackSpeed,
+        setPlaybackSpeed,
+        setFrameDuration,
+        isLooping,
+        toggleLoop,
+        stepForward,
+        stepBackward
     } = usePlayStore();
 
     const [editingDuration, setEditingDuration] = useState<number | null>(null);
-    const [durationInput, setDurationInput] = useState('');
 
-    const handleAddFrame = () => {
-        addFrame();
-        toast.success('Frame added');
-    };
-
-    const handleDeleteFrame = (index: number) => {
-        deleteFrame(index);
-        toast.success('Frame deleted');
-    };
-
-    const handleDuplicateFrame = (index: number) => {
-        duplicateFrame(index);
-        toast.success('Frame duplicated');
-    };
-
-    const handleEditDuration = (index: number) => {
-        const frame = frames[index];
-        setEditingDuration(index);
-        setDurationInput(String(frame.duration || 500));
-    };
-
-    const handleSaveDuration = () => {
-        if (editingDuration !== null) {
-            const duration = parseInt(durationInput);
-            if (!isNaN(duration) && duration > 0) {
-                setFrameDuration(editingDuration, duration);
-                toast.success('Duration updated');
-            }
-            setEditingDuration(null);
-        }
+    const handleDurationChange = (index: number, newDuration: number) => {
+        setFrameDuration(index, newDuration);
+        setEditingDuration(null);
+        toast.success(`Frame duration set to ${newDuration}ms`);
     };
 
     return (
-        <div className="h-52 bg-white border-t border-gray-200 flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center gap-4">
+        <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="glass-panel rounded-3xl p-4 flex flex-col gap-4"
+        >
+            {/* Controls Bar */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    {/* Step Backward */}
+                    <button
+                        onClick={stepBackward}
+                        className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all border border-white/5 hover:border-white/20"
+                        title="Previous Frame"
+                    >
+                        <SkipBack size={18} />
+                    </button>
+
+                    {/* Play/Pause */}
                     <button
                         onClick={togglePlay}
-                        className="p-3 rounded-xl bg-orange-600 text-white hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/30 hover:scale-105"
+                        className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-orange-500/30"
                     >
-                        {isPlaying ? <Pause size={22} strokeWidth={2.5} /> : <Play size={22} strokeWidth={2.5} />}
+                        {isPlaying ? <Pause fill="white" size={20} /> : <Play fill="white" size={20} className="ml-1" />}
                     </button>
-                    <div className="flex flex-col">
-                        <span className="text-gray-900 text-base font-bold">
-                            {frames.length} {frames.length === 1 ? 'Frame' : 'Frames'}
-                        </span>
-                        <span className="text-gray-500 text-sm font-medium">Currently on frame {currentFrameIndex + 1}</span>
+
+                    {/* Step Forward */}
+                    <button
+                        onClick={stepForward}
+                        className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all border border-white/5 hover:border-white/20"
+                        title="Next Frame"
+                    >
+                        <SkipForward size={18} />
+                    </button>
+
+                    <div className="h-8 w-px bg-white/10 mx-2" />
+
+                    {/* Loop Toggle */}
+                    <button
+                        onClick={toggleLoop}
+                        className={`px-3 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all ${isLooping
+                            ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                            : 'bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white'
+                            }`}
+                        title="Toggle Loop"
+                    >
+                        <Repeat size={16} />
+                        Loop
+                    </button>
+
+                    <div className="h-8 w-px bg-white/10 mx-2" />
+
+                    {/* Speed Controls */}
+                    <div className="flex items-center gap-2 bg-black/20 rounded-xl p-1">
+                        {[200, 500, 1000].map((speed) => (
+                            <button
+                                key={speed}
+                                onClick={() => setPlaybackSpeed(speed)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${playbackSpeed === speed
+                                    ? 'bg-white/10 text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                            >
+                                {speed}ms
+                            </button>
+                        ))}
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-gray-400">
+                        {currentFrameIndex + 1} / {frames.length} Frames
+                    </span>
                     <button
-                        onClick={handleAddFrame}
-                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-orange-600 text-white hover:bg-orange-700 text-sm font-semibold transition-all shadow-lg shadow-orange-600/30 hover:scale-105"
+                        onClick={addFrame}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/5 hover:border-white/20 transition-all text-sm font-semibold"
                     >
-                        <Plus size={18} strokeWidth={2.5} /> Add Frame
+                        <Plus size={16} />
+                        Add Frame
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 px-6 py-5 overflow-x-auto flex items-center gap-4">
-                {frames.map((frame, index) => (
-                    <div
-                        key={frame.id}
-                        className={`
-              relative flex-shrink-0 w-40 h-28 rounded-2xl border-2 cursor-pointer transition-all
-              ${index === currentFrameIndex
-                                ? 'border-orange-600 bg-orange-50 shadow-lg scale-105'
-                                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
-                            }
-            `}
-                        onClick={() => setCurrentFrame(index)}
-                    >
-                        <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-xs font-bold ${index === currentFrameIndex ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-700'
-                            }`}>
-                            {index + 1}
-                        </div>
-
-                        {/* Duration Badge */}
-                        <div
-                            className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-gray-600 cursor-pointer hover:bg-gray-50"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditDuration(index);
-                            }}
-                            title="Click to edit duration"
+            {/* Frames Strip */}
+            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar min-h-[140px] items-center">
+                <AnimatePresence mode='popLayout'>
+                    {frames.map((frame, index) => (
+                        <motion.div
+                            key={frame.id}
+                            layout
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            onClick={() => setCurrentFrame(index)}
+                            className={`relative group flex-shrink-0 w-40 aspect-video rounded-xl border-2 transition-all cursor-pointer overflow-hidden ${currentFrameIndex === index
+                                ? 'border-orange-500 ring-4 ring-orange-500/20 z-10 scale-105'
+                                : 'border-white/5 hover:border-white/20 bg-black/20'
+                                }`}
                         >
-                            <Clock size={12} />
-                            {frame.duration || 500}ms
-                        </div>
-
-                        {index === currentFrameIndex && (
-                            <div className="absolute -bottom-2 -right-2 flex gap-1.5">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleDuplicateFrame(index); }}
-                                    className="p-2 rounded-full bg-white text-gray-700 hover:bg-gray-100 shadow-lg border border-gray-200 transition-all hover:scale-110"
-                                    title="Duplicate"
-                                >
-                                    <Copy size={14} strokeWidth={2.5} />
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteFrame(index); }}
-                                    className="p-2 rounded-full bg-white text-red-600 hover:bg-red-50 shadow-lg border border-gray-200 transition-all hover:scale-110"
-                                    title="Delete"
-                                >
-                                    <Trash2 size={14} strokeWidth={2.5} />
-                                </button>
+                            {/* Frame Number */}
+                            <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-[10px] font-bold text-white border border-white/10">
+                                {index + 1}
                             </div>
-                        )}
 
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-sm">
-                            Frame {index + 1}
-                        </div>
-                    </div>
-                ))}
+                            {/* Duration Badge */}
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingDuration(index);
+                                }}
+                                className="absolute bottom-2 right-2 px-2 py-1 rounded-md bg-black/50 backdrop-blur-sm flex items-center gap-1 text-[10px] font-medium text-gray-300 hover:bg-black/70 hover:text-white transition-colors border border-white/10"
+                            >
+                                <Clock size={10} />
+                                {frame.duration || 500}ms
+                            </div>
+
+                            {/* Frame Content Preview (Simplified) */}
+                            <div className="w-full h-full p-4 opacity-50">
+                                {Object.values(frame.objects).map((obj) => (
+                                    <div
+                                        key={obj.id}
+                                        className="absolute w-2 h-2 rounded-full"
+                                        style={{
+                                            left: `${(obj.x / 800) * 100}%`,
+                                            top: `${(obj.y / 600) * 100}%`,
+                                            backgroundColor: obj.type === 'ball' ? '#f97316' : obj.type === 'player_offense' ? '#fff' : '#3b82f6'
+                                        }}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Hover Actions */}
+                            <div className={`absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center gap-2 opacity-0 transition-opacity ${currentFrameIndex === index ? 'group-hover:opacity-100' : ''}`}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        duplicateFrame(index);
+                                        toast.success('Frame duplicated');
+                                    }}
+                                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                    title="Duplicate Frame"
+                                >
+                                    <Copy size={14} />
+                                </button>
+                                {frames.length > 1 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteFrame(index);
+                                            toast.success('Frame deleted');
+                                        }}
+                                        className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-200 transition-colors"
+                                        title="Delete Frame"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+
+                {/* Add Button at end of list */}
+                <motion.button
+                    layout
+                    onClick={addFrame}
+                    className="flex-shrink-0 w-12 h-full rounded-xl border-2 border-dashed border-white/10 hover:border-white/30 hover:bg-white/5 transition-all flex items-center justify-center text-gray-500 hover:text-white"
+                >
+                    <Plus size={20} />
+                </motion.button>
             </div>
 
             {/* Duration Edit Modal */}
-            {editingDuration !== null && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Edit Frame Duration</h3>
-                        <div className="space-y-2 mb-4">
-                            <label className="text-sm font-semibold text-gray-700">Duration (milliseconds)</label>
-                            <input
-                                type="number"
-                                value={durationInput}
-                                onChange={(e) => setDurationInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSaveDuration()}
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-semibold focus:outline-none focus:border-orange-600"
-                                placeholder="500"
-                                autoFocus
-                                min="100"
-                                step="100"
-                            />
-                            <p className="text-xs text-gray-500">How long this frame plays during animation</p>
-                        </div>
-                        <div className="flex gap-3">
+            <AnimatePresence>
+                {editingDuration !== null && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setEditingDuration(null)}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-slate-900 border border-white/10 p-6 rounded-2xl shadow-2xl w-80"
+                        >
+                            <h3 className="text-lg font-bold text-white mb-4">Frame Duration</h3>
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                {[200, 500, 1000, 2000, 3000].map((dur) => (
+                                    <button
+                                        key={dur}
+                                        onClick={() => handleDurationChange(editingDuration, dur)}
+                                        className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 text-sm font-medium text-gray-300 hover:text-white transition-all"
+                                    >
+                                        {dur}ms
+                                    </button>
+                                ))}
+                            </div>
                             <button
                                 onClick={() => setEditingDuration(null)}
-                                className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold"
+                                className="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-medium transition-all"
                             >
                                 Cancel
                             </button>
-                            <button
-                                onClick={handleSaveDuration}
-                                className="flex-1 px-4 py-2.5 rounded-xl bg-orange-600 text-white hover:bg-orange-700 font-semibold"
-                            >
-                                Save
-                            </button>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };

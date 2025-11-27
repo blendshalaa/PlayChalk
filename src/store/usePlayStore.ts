@@ -30,6 +30,7 @@ export const usePlayStore = create<PlayState>()(
             savedPlays: [],
             currentPlayId: null,
             showWelcome: true,
+            isLooping: false,
 
             setShowWelcome: (show) => set({ showWelcome: show }),
 
@@ -351,6 +352,26 @@ export const usePlayStore = create<PlayState>()(
                     selectedObjectId: null,
                 });
                 get().saveHistory();
+            },
+
+            toggleLoop: () => set((state) => ({ isLooping: !state.isLooping })),
+
+            stepForward: () => {
+                const state = get();
+                if (state.currentFrameIndex < state.frames.length - 1) {
+                    set({ currentFrameIndex: state.currentFrameIndex + 1, isPlaying: false });
+                } else if (state.isLooping) {
+                    set({ currentFrameIndex: 0, isPlaying: false });
+                }
+            },
+
+            stepBackward: () => {
+                const state = get();
+                if (state.currentFrameIndex > 0) {
+                    set({ currentFrameIndex: state.currentFrameIndex - 1, isPlaying: false });
+                } else if (state.isLooping) {
+                    set({ currentFrameIndex: state.frames.length - 1, isPlaying: false });
+                }
             },
         }),
         {
