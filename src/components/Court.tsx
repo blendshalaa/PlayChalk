@@ -108,24 +108,162 @@ const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
                 fill="white"
             />
 
-            {/* Left Side */}
+            {/* Left Side (Left Basket) */}
             <Group x={offsetX} y={offsetY}>
-                <Rect x={0} y={(courtHeight - 200) / 2} width={200} height={200} stroke="white" strokeWidth={4} />
-                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={90} stroke="white" strokeWidth={4} />
-                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={270} stroke="white" strokeWidth={4} dash={[10, 10]} />
-                <Arc x={50} y={courtHeight / 2} innerRadius={0} outerRadius={280} angle={180} rotation={90} stroke="white" strokeWidth={4} />
-                <Line points={[40, courtHeight / 2 - 30, 40, courtHeight / 2 + 30]} stroke="white" strokeWidth={4} />
-                <KonvaCircle x={55} y={courtHeight / 2} radius={10} stroke="#ea580c" strokeWidth={3} />
+                {/* Paint/Key */}
+                <Rect
+                    x={0}
+                    y={(courtHeight - 160) / 2}
+                    width={150}
+                    height={160}
+                    fill="rgba(234, 88, 12, 0.2)"
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Free Throw Circle - Top Half */}
+                <Arc
+                    x={150}
+                    y={courtHeight / 2}
+                    innerRadius={0}
+                    outerRadius={60}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Free Throw Circle - Bottom Half (Dashed) */}
+                <Arc
+                    x={150}
+                    y={courtHeight / 2}
+                    innerRadius={0}
+                    outerRadius={60}
+                    angle={180}
+                    rotation={90}
+                    stroke="white"
+                    strokeWidth={4}
+                    dash={[8, 8]}
+                />
+
+                {/* 3-Point Line */}
+                <Arc
+                    x={40}
+                    y={courtHeight / 2}
+                    innerRadius={0}
+                    outerRadius={237.5}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* 3-Point Line Straight Sections */}
+                <Line
+                    points={[40, 14, 40, (courtHeight / 2) - 237.5]}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+                <Line
+                    points={[40, (courtHeight / 2) + 237.5, 40, courtHeight - 14]}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Backboard */}
+                <Line
+                    points={[40, courtHeight / 2 - 30, 40, courtHeight / 2 + 30]}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Rim */}
+                <KonvaCircle
+                    x={55}
+                    y={courtHeight / 2}
+                    radius={9}
+                    stroke="#ea580c"
+                    strokeWidth={3}
+                />
             </Group>
 
-            {/* Right Side */}
+            {/* Right Side (Right Basket) - Mirror of Left */}
             <Group x={offsetX + courtWidth} y={offsetY} scaleX={-1}>
-                <Rect x={0} y={(courtHeight - 200) / 2} width={200} height={200} stroke="white" strokeWidth={4} />
-                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={90} stroke="white" strokeWidth={4} />
-                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={270} stroke="white" strokeWidth={4} dash={[10, 10]} />
-                <Arc x={50} y={courtHeight / 2} innerRadius={0} outerRadius={280} angle={180} rotation={90} stroke="white" strokeWidth={4} />
-                <Line points={[40, courtHeight / 2 - 30, 40, courtHeight / 2 + 30]} stroke="white" strokeWidth={4} />
-                <KonvaCircle x={55} y={courtHeight / 2} radius={10} stroke="#ea580c" strokeWidth={3} />
+                {/* Paint/Key */}
+                <Rect
+                    x={0}
+                    y={(courtHeight - 160) / 2}
+                    width={150}
+                    height={160}
+                    fill="rgba(234, 88, 12, 0.2)"
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Free Throw Circle - Top Half */}
+                <Arc
+                    x={150}
+                    y={courtHeight / 2}
+                    innerRadius={0}
+                    outerRadius={60}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Free Throw Circle - Bottom Half (Dashed) */}
+                <Arc
+                    x={150}
+                    y={courtHeight / 2}
+                    innerRadius={0}
+                    outerRadius={60}
+                    angle={180}
+                    rotation={90}
+                    stroke="white"
+                    strokeWidth={4}
+                    dash={[8, 8]}
+                />
+
+                {/* 3-Point Line */}
+                <Arc
+                    x={40}
+                    y={courtHeight / 2}
+                    innerRadius={0}
+                    outerRadius={237.5}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* 3-Point Line Straight Sections */}
+                <Line
+                    points={[40, 14, 40, (courtHeight / 2) - 237.5]}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+                <Line
+                    points={[40, (courtHeight / 2) + 237.5, 40, courtHeight - 14]}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Backboard */}
+                <Line
+                    points={[40, courtHeight / 2 - 30, 40, courtHeight / 2 + 30]}
+                    stroke="white"
+                    strokeWidth={4}
+                />
+
+                {/* Rim */}
+                <KonvaCircle
+                    x={55}
+                    y={courtHeight / 2}
+                    radius={9}
+                    stroke="#ea580c"
+                    strokeWidth={3}
+                />
             </Group>
 
             {/* Court Shine Effect - Diagonal gradient overlay */}
@@ -183,7 +321,9 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         courtType,
         addTextAnnotation,
         deleteTextAnnotation,
-        textFontSize
+        textFontSize,
+        attachBallToPlayer,
+        detachBall
     } = usePlayStore();
 
     const currentFrame = frames[currentFrameIndex];
@@ -264,6 +404,16 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                     e.preventDefault();
                     setTool('arrow');
                     toast.success('Arrow tool');
+                } else if (e.key === 'd' || e.key === 'D') {
+                    if (selectedObjectId) {
+                        const currentFrame = frames[currentFrameIndex];
+                        const selectedObj = currentFrame?.objects[selectedObjectId];
+                        if (selectedObj?.type === 'ball' && selectedObj.attachedTo) {
+                            e.preventDefault();
+                            detachBall(selectedObjectId);
+                            toast.success('Ball detached');
+                        }
+                    }
                 } else if (e.key === 'Delete' || e.key === 'Backspace') {
                     if (selectedObjectId) {
                         e.preventDefault();
@@ -492,7 +642,28 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
 
     const handleObjectClick = (objId: string) => {
         if (currentTool !== 'select') return;
+
+        // Check if we're clicking a player while a ball is selected
+        const selectedObj = selectedObjectId ? currentFrame?.objects[selectedObjectId] : null;
+        const clickedObj = currentFrame?.objects[objId];
+
+        if (selectedObj?.type === 'ball' && clickedObj && (clickedObj.type === 'player_offense' || clickedObj.type === 'player_defense')) {
+            // Attach ball to player
+            attachBallToPlayer(selectedObjectId!, objId);
+            toast.success('Ball attached to player! Press D to detach.');
+            return;
+        }
+
         setSelectedObject(objId);
+
+        // Show helpful message when ball is selected
+        if (clickedObj?.type === 'ball') {
+            if (clickedObj.attachedTo) {
+                toast('Ball is attached. Press D to detach or click another player to transfer.', { icon: '🔗' });
+            } else {
+                toast('Ball selected. Click on a player to attach it.', { icon: '🏀' });
+            }
+        }
     };
 
     const handleLabelEdit = (objId: string, currentLabel?: string) => {
@@ -579,12 +750,25 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                             <Layer>
                                 {currentFrame && Object.values(currentFrame.objects).map((obj) => {
                                     const isSelected = selectedObjectId === obj.id;
+
+                                    // Calculate position - if ball is attached, use player's position + offset
+                                    let displayX = obj.x;
+                                    let displayY = obj.y;
+
+                                    if (obj.type === 'ball' && obj.attachedTo) {
+                                        const attachedPlayer = currentFrame.objects[obj.attachedTo];
+                                        if (attachedPlayer) {
+                                            displayX = attachedPlayer.x + 25; // offset to the right
+                                            displayY = attachedPlayer.y;
+                                        }
+                                    }
+
                                     return (
                                         <Group
                                             key={obj.id}
-                                            x={obj.x}
-                                            y={obj.y}
-                                            draggable={!isPlaying && currentTool === 'select'}
+                                            x={displayX}
+                                            y={displayY}
+                                            draggable={!isPlaying && currentTool === 'select' && !obj.attachedTo}
                                             ref={(node) => { if (node) nodeRefs.current[obj.id] = node; }}
 
                                             dragBoundFunc={(pos) => {
@@ -681,6 +865,24 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                                         shadowBlur={8}
                                                         shadowOpacity={0.4}
                                                     />
+                                                    {/* Attachment indicator */}
+                                                    {obj.attachedTo && (
+                                                        <>
+                                                            <KonvaCircle
+                                                                x={-15}
+                                                                y={-15}
+                                                                radius={4}
+                                                                fill="#10b981"
+                                                                stroke="white"
+                                                                strokeWidth={1}
+                                                            />
+                                                            <Line
+                                                                points={[-13, -13, -8, -8]}
+                                                                stroke="#10b981"
+                                                                strokeWidth={2}
+                                                            />
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
 

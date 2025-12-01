@@ -7,6 +7,7 @@ export interface PlayObject {
     y: number;
     label?: string;
     color?: string;
+    attachedTo?: string; // ID of the player this ball is attached to
 }
 
 export interface DrawingObject {
@@ -127,4 +128,8 @@ export interface PlayState {
     deleteRoster: (rosterId: string) => void;
     addPlayerToRoster: (rosterId: string, player: RosterPlayer) => void;
     removePlayerFromRoster: (rosterId: string, playerId: string) => void;
+
+    // Ball Attachment Actions
+    attachBallToPlayer: (ballId: string, playerId: string) => void;
+    detachBall: (ballId: string) => void;
 }

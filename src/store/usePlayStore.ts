@@ -214,11 +214,13 @@ export const usePlayStore = create<PlayState>()(
                     const newFrames = [...state.frames];
                     const frame = newFrames[frameIndex];
                     if (frame && frame.objects[objectId]) {
+                        // Update the object position
                         frame.objects[objectId] = {
                             ...frame.objects[objectId],
                             x,
                             y,
                         };
+                        // Note: Attached balls don't need position updates - they're calculated on render
                     }
                     return { frames: newFrames };
                 });
@@ -403,6 +405,62 @@ export const usePlayStore = create<PlayState>()(
             removePlayerFromRoster: (rosterId, playerId) => set((state) => ({
                 rosters: state.rosters.map(r => r.id === rosterId ? { ...r, players: r.players.filter(p => p.id !== playerId) } : r)
             })),
+
+            // Ball Attachment Actions
+            attachBallToPlayer: (ballId, playerId) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame) => {
+                        const ball = frame.objects[ballId];
+                        const player = frame.objects[playerId];
+
+                        if (ball && player && ball.type === 'ball') {
+                            // Position ball next to player (offset to the right)
+                            const offsetX = 25;
+                            const offsetY = 0;
+
+                            return {
+                                ...frame,
+                                objects: {
+                                    ...frame.objects,
+                                    [ballId]: {
+                                        ...ball,
+                                        x: player.x + offsetX,
+                                        y: player.y + offsetY,
+                                        attachedTo: playerId,
+                                    },
+                                },
+                            };
+                        }
+                        return frame;
+                    });
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
+
+            detachBall: (ballId) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame) => {
+                        const ball = frame.objects[ballId];
+
+                        if (ball && ball.type === 'ball' && ball.attachedTo) {
+                            return {
+                                ...frame,
+                                objects: {
+                                    ...frame.objects,
+                                    [ballId]: {
+                                        ...ball,
+                                        attachedTo: undefined,
+                                    },
+                                },
+                            };
+                        }
+                        return frame;
+                    });
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
         }),
         {
             name: 'playchalk-storage',
