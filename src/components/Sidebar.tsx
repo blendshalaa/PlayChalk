@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, MousePointer2, Pencil, ArrowRight, Palette } from 'lucide-react';
+import { X, MousePointer2, Minus, ArrowRight, Palette, Type, Pencil, LayoutTemplate, Crop, Plus, Trash2 } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
 import { motion, AnimatePresence } from 'framer-motion';
+
 
 const PRESET_COLORS = [
     { name: 'White', value: '#ffffff' },
@@ -23,14 +24,25 @@ export const Sidebar = () => {
         annotationColor,
         setAnnotationColor,
         annotationStrokeWidth,
-        setAnnotationStrokeWidth
+        setAnnotationStrokeWidth,
+        courtType,
+        setCourtType,
+        textFontSize,
+        setTextFontSize,
+        rosters,
+        addRoster,
+        deleteRoster,
+        addPlayerToRoster
     } = usePlayStore();
 
-    const handleDragStart = (e: React.DragEvent, type: string) => {
+    const handleDragStart = (e: React.DragEvent, type: string, data?: any) => {
         e.dataTransfer.setData('type', type);
+        if (data) {
+            e.dataTransfer.setData('data', JSON.stringify(data));
+        }
     };
 
-    const showDrawingControls = currentTool === 'line' || currentTool === 'arrow';
+    const showDrawingControls = ['line', 'arrow', 'freehand', 'text'].includes(currentTool);
 
     return (
         <motion.div
@@ -112,6 +124,80 @@ export const Sidebar = () => {
                     </div>
                 </div>
 
+
+
+
+
+                {/* Rosters Section */}
+                <div>
+                    <div className="flex items-center justify-between mb-3 px-1">
+                        <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Team Rosters
+                        </h2>
+                        <button
+                            onClick={() => addRoster({
+                                id: Math.random().toString(36).substr(2, 9),
+                                name: `Team ${rosters.length + 1}`,
+                                color: '#ef4444',
+                                players: Array.from({ length: 5 }).map((_, i) => ({
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    name: `Player ${i + 1}`,
+                                    number: `${i + 1}`,
+                                    position: 'G'
+                                }))
+                            })}
+                            className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                            title="Add Team"
+                        >
+                            <Plus size={12} />
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {rosters.map((roster) => (
+                            <div key={roster.id} className="bg-white/5 rounded-xl p-3 border border-white/5">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold text-white">{roster.name}</span>
+                                    <button
+                                        onClick={() => deleteRoster(roster.id)}
+                                        className="text-gray-500 hover:text-red-400 transition-colors"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-5 gap-1">
+                                    {roster.players.map((player) => (
+                                        <div
+                                            key={player.id}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, 'roster_player', { ...player, color: roster.color })}
+                                            className="aspect-square rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
+                                            style={{ borderColor: roster.color }}
+                                        >
+                                            {player.number}
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => addPlayerToRoster(roster.id, {
+                                            id: Math.random().toString(36).substr(2, 9),
+                                            name: 'New Player',
+                                            number: `${roster.players.length + 1}`
+                                        })}
+                                        className="aspect-square rounded-full bg-white/5 border border-dashed border-white/20 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+                                    >
+                                        <Plus size={10} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {rosters.length === 0 && (
+                            <div className="text-center py-4 text-xs text-gray-500 italic">
+                                No teams yet. Click + to add one.
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Tools Section */}
                 <div>
                     <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">
@@ -126,9 +212,16 @@ export const Sidebar = () => {
                             shortcut="S"
                         />
                         <ToolButton
+                            active={currentTool === 'freehand'}
+                            onClick={() => setTool('freehand')}
+                            icon={<Pencil size={18} />}
+                            label="Freehand"
+                            shortcut="F"
+                        />
+                        <ToolButton
                             active={currentTool === 'line'}
                             onClick={() => setTool('line')}
-                            icon={<Pencil size={18} />}
+                            icon={<Minus size={18} />}
                             label="Draw Line"
                             shortcut="L"
                         />
@@ -139,6 +232,42 @@ export const Sidebar = () => {
                             label="Draw Arrow"
                             shortcut="A"
                         />
+                        <ToolButton
+                            active={currentTool === 'text'}
+                            onClick={() => setTool('text')}
+                            icon={<Type size={18} />}
+                            label="Add Text"
+                            shortcut="T"
+                        />
+                    </div>
+                </div>
+
+                {/* Court View Section */}
+                <div>
+                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">
+                        Court View
+                    </h2>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => setCourtType('full')}
+                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${courtType === 'full'
+                                ? 'bg-orange-500/20 border-orange-500 text-orange-500'
+                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+                                }`}
+                        >
+                            <LayoutTemplate size={20} />
+                            <span className="text-[10px] font-bold">Full Court</span>
+                        </button>
+                        <button
+                            onClick={() => setCourtType('half')}
+                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${courtType === 'half'
+                                ? 'bg-orange-500/20 border-orange-500 text-orange-500'
+                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+                                }`}
+                        >
+                            <Crop size={20} />
+                            <span className="text-[10px] font-bold">Half Court</span>
+                        </button>
                     </div>
                 </div>
 
@@ -172,26 +301,41 @@ export const Sidebar = () => {
                                 ))}
                             </div>
 
-                            {/* Stroke Width */}
+                            {/* Stroke Width / Font Size */}
                             <div className="flex gap-2">
-                                {STROKE_WIDTHS.map((width) => (
-                                    <button
-                                        key={width}
-                                        onClick={() => setAnnotationStrokeWidth(width)}
-                                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${annotationStrokeWidth === width
-                                            ? 'bg-white text-black'
-                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                                            }`}
-                                    >
-                                        {width}px
-                                    </button>
-                                ))}
+                                {currentTool === 'text' ? (
+                                    [12, 16, 20, 24, 32].map((size) => (
+                                        <button
+                                            key={size}
+                                            onClick={() => setTextFontSize(size)}
+                                            className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${textFontSize === size
+                                                ? 'bg-white text-black'
+                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {size}
+                                        </button>
+                                    ))
+                                ) : (
+                                    STROKE_WIDTHS.map((width) => (
+                                        <button
+                                            key={width}
+                                            onClick={() => setAnnotationStrokeWidth(width)}
+                                            className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${annotationStrokeWidth === width
+                                                ? 'bg-white text-black'
+                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {width}px
+                                        </button>
+                                    ))
+                                )}
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </div>
-        </motion.div>
+            </div >
+        </motion.div >
     );
 };
 

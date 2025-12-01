@@ -12,15 +12,21 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 function App() {
   const { showWelcome } = usePlayStore();
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
-  const exportFnRef = useRef<(() => void) | null>(null);
+  const exportFnsRef = useRef<{ exportImage: () => void; exportVideo: () => void } | null>(null);
 
-  const handleRegisterExport = (callback: () => void) => {
-    exportFnRef.current = callback;
+  const handleRegisterExport = (exports: { exportImage: () => void; exportVideo: () => void }) => {
+    exportFnsRef.current = exports;
   };
 
-  const handleExport = () => {
-    if (exportFnRef.current) {
-      exportFnRef.current();
+  const handleExportImage = () => {
+    if (exportFnsRef.current) {
+      exportFnsRef.current.exportImage();
+    }
+  };
+
+  const handleExportVideo = () => {
+    if (exportFnsRef.current) {
+      exportFnsRef.current.exportVideo();
     }
   };
 
@@ -76,7 +82,7 @@ function App() {
 
             {/* Header floats on top right, offset for Sidebar */}
             <div className="absolute top-6 left-80 right-6 pointer-events-auto">
-              <Header onExport={handleExport} />
+              <Header onExportImage={handleExportImage} onExportVideo={handleExportVideo} />
             </div>
 
             {/* Timeline floats at bottom */}

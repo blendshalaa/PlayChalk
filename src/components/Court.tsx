@@ -10,15 +10,51 @@ const WIDTH = 800;
 const HEIGHT = 600;
 
 interface CourtProps {
-    onRegisterExport: (callback: () => void) => void;
+    onRegisterExport: (exports: { exportImage: () => void; exportVideo: () => void }) => void;
 }
 
-const CourtBackground = () => {
+const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
     // Simplified court with better visibility
-    const courtWidth = 700;
-    const courtHeight = 400;
+    const courtWidth = type === 'full' ? 700 : 600;
+    const courtHeight = type === 'full' ? 400 : 500;
     const offsetX = (WIDTH - courtWidth) / 2;
     const offsetY = (HEIGHT - courtHeight) / 2;
+
+    if (type === 'half') {
+        return (
+            <Group>
+                {/* Floor Base */}
+                <Rect width={WIDTH} height={HEIGHT} fill="#d4a373" />
+                {/* Wood Pattern */}
+                {Array.from({ length: 60 }).map((_, i) => (
+                    <Rect key={i} x={0} y={i * (HEIGHT / 60)} width={WIDTH} height={HEIGHT / 60} fill={i % 2 === 0 ? "rgba(0,0,0,0.03)" : "transparent"} />
+                ))}
+
+                {/* Main Half Court Boundary */}
+                <Rect x={offsetX} y={offsetY} width={courtWidth} height={courtHeight} stroke="white" strokeWidth={4} shadowColor="black" shadowBlur={3} shadowOpacity={0.2} />
+
+                {/* Baseline (Bottom) */}
+                <Group y={offsetY + courtHeight}>
+                    {/* Key */}
+                    <Rect x={offsetX + (courtWidth - 200) / 2} y={-220} width={200} height={220} fill="rgba(234, 88, 12, 0.2)" stroke="white" strokeWidth={4} />
+
+                    {/* Free Throw Circle */}
+                    <Arc x={offsetX + courtWidth / 2} y={-220} innerRadius={0} outerRadius={70} angle={180} rotation={0} stroke="white" strokeWidth={4} />
+                    <Arc x={offsetX + courtWidth / 2} y={-220} innerRadius={0} outerRadius={70} angle={180} rotation={180} stroke="white" strokeWidth={4} dash={[10, 10]} />
+
+                    {/* 3-Point Line */}
+                    <Arc x={offsetX + courtWidth / 2} y={-35} innerRadius={0} outerRadius={280} angle={180} rotation={180} stroke="white" strokeWidth={4} />
+
+                    {/* Hoop */}
+                    <Line points={[offsetX + courtWidth / 2 - 30, -35, offsetX + courtWidth / 2 + 30, -35]} stroke="white" strokeWidth={4} />
+                    <KonvaCircle x={offsetX + courtWidth / 2} y={-47} radius={10} stroke="#ea580c" strokeWidth={3} />
+                </Group>
+
+                {/* Center Circle (at top) */}
+                <Arc x={offsetX + courtWidth / 2} y={offsetY} innerRadius={0} outerRadius={70} angle={180} rotation={0} stroke="white" strokeWidth={4} />
+            </Group>
+        );
+    }
 
     return (
         <Group>
@@ -72,134 +108,24 @@ const CourtBackground = () => {
                 fill="white"
             />
 
-            {/* LEFT SIDE */}
-            <Group>
-                {/* Key (Paint) */}
-                <Rect
-                    x={offsetX}
-                    y={HEIGHT / 2 - 80}
-                    width={150}
-                    height={160}
-                    fill="rgba(234, 88, 12, 0.2)"
-                    stroke="white"
-                    strokeWidth={4}
-                />
-
-                {/* Free Throw Circle */}
-                <Arc
-                    x={offsetX + 150}
-                    y={HEIGHT / 2}
-                    innerRadius={0}
-                    outerRadius={50}
-                    angle={180}
-                    rotation={-90}
-                    stroke="white"
-                    strokeWidth={4}
-                />
-                <Arc
-                    x={offsetX + 150}
-                    y={HEIGHT / 2}
-                    innerRadius={0}
-                    outerRadius={50}
-                    angle={180}
-                    rotation={90}
-                    stroke="white"
-                    strokeWidth={4}
-                    dash={[10, 10]}
-                />
-
-                {/* 3-Point Line */}
-                <Arc
-                    x={offsetX + 30}
-                    y={HEIGHT / 2}
-                    innerRadius={0}
-                    outerRadius={200}
-                    angle={180}
-                    rotation={-90}
-                    stroke="white"
-                    strokeWidth={4}
-                />
-
-                {/* Hoop */}
-                <Line
-                    points={[offsetX + 26, HEIGHT / 2 - 25, offsetX + 26, HEIGHT / 2 + 25]}
-                    stroke="white"
-                    strokeWidth={4}
-                    shadowColor="black"
-                    shadowBlur={5}
-                />
-                <KonvaCircle
-                    x={offsetX + 38}
-                    y={HEIGHT / 2}
-                    radius={8}
-                    stroke="#ea580c"
-                    strokeWidth={3}
-                />
+            {/* Left Side */}
+            <Group x={offsetX} y={offsetY}>
+                <Rect x={0} y={(courtHeight - 200) / 2} width={200} height={200} stroke="white" strokeWidth={4} />
+                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={90} stroke="white" strokeWidth={4} />
+                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={270} stroke="white" strokeWidth={4} dash={[10, 10]} />
+                <Arc x={50} y={courtHeight / 2} innerRadius={0} outerRadius={280} angle={180} rotation={90} stroke="white" strokeWidth={4} />
+                <Line points={[40, courtHeight / 2 - 30, 40, courtHeight / 2 + 30]} stroke="white" strokeWidth={4} />
+                <KonvaCircle x={55} y={courtHeight / 2} radius={10} stroke="#ea580c" strokeWidth={3} />
             </Group>
 
-            {/* RIGHT SIDE */}
-            <Group>
-                {/* Key (Paint) */}
-                <Rect
-                    x={offsetX + courtWidth - 150}
-                    y={HEIGHT / 2 - 80}
-                    width={150}
-                    height={160}
-                    fill="rgba(234, 88, 12, 0.2)"
-                    stroke="white"
-                    strokeWidth={4}
-                />
-
-                {/* Free Throw Circle */}
-                <Arc
-                    x={offsetX + courtWidth - 150}
-                    y={HEIGHT / 2}
-                    innerRadius={0}
-                    outerRadius={50}
-                    angle={180}
-                    rotation={90}
-                    stroke="white"
-                    strokeWidth={4}
-                />
-                <Arc
-                    x={offsetX + courtWidth - 150}
-                    y={HEIGHT / 2}
-                    innerRadius={0}
-                    outerRadius={50}
-                    angle={180}
-                    rotation={-90}
-                    stroke="white"
-                    strokeWidth={4}
-                    dash={[10, 10]}
-                />
-
-                {/* 3-Point Line */}
-                <Arc
-                    x={offsetX + courtWidth - 30}
-                    y={HEIGHT / 2}
-                    innerRadius={0}
-                    outerRadius={200}
-                    angle={180}
-                    rotation={90}
-                    stroke="white"
-                    strokeWidth={4}
-                />
-
-                {/* Hoop */}
-                <Line
-                    points={[offsetX + courtWidth - 26, HEIGHT / 2 - 25, offsetX + courtWidth - 26, HEIGHT / 2 + 25]}
-                    stroke="white"
-                    strokeWidth={4}
-                    shadowColor="black"
-                    shadowBlur={5}
-                />
-                <KonvaCircle
-                    x={offsetX + courtWidth - 38}
-                    y={HEIGHT / 2}
-                    radius={8}
-                    stroke="#ea580c"
-                    strokeWidth={3}
-                />
+            {/* Right Side */}
+            <Group x={offsetX + courtWidth} y={offsetY} scaleX={-1}>
+                <Rect x={0} y={(courtHeight - 200) / 2} width={200} height={200} stroke="white" strokeWidth={4} />
+                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={90} stroke="white" strokeWidth={4} />
+                <Arc x={200} y={courtHeight / 2} innerRadius={0} outerRadius={70} angle={180} rotation={270} stroke="white" strokeWidth={4} dash={[10, 10]} />
+                <Arc x={50} y={courtHeight / 2} innerRadius={0} outerRadius={280} angle={180} rotation={90} stroke="white" strokeWidth={4} />
+                <Line points={[40, courtHeight / 2 - 30, 40, courtHeight / 2 + 30]} stroke="white" strokeWidth={4} />
+                <KonvaCircle x={55} y={courtHeight / 2} radius={10} stroke="#ea580c" strokeWidth={3} />
             </Group>
 
             {/* Court Shine Effect - Diagonal gradient overlay */}
@@ -239,6 +165,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         frames,
         currentFrameIndex,
         addObject,
+        addObjects,
         updateObjectPosition,
         deleteObject,
         isPlaying,
@@ -252,7 +179,11 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         annotationColor,
         annotationStrokeWidth,
         undo,
-        redo
+        redo,
+        courtType,
+        addTextAnnotation,
+        deleteTextAnnotation,
+        textFontSize
     } = usePlayStore();
 
     const currentFrame = frames[currentFrameIndex];
@@ -264,7 +195,12 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
     const [editingLabel, setEditingLabel] = useState<string | null>(null);
     const [labelInput, setLabelInput] = useState('');
 
-    const isEmpty = currentFrame && Object.keys(currentFrame.objects).length === 0 && currentFrame.annotations.length === 0;
+    // Text Annotation State
+    const [editingTextId, setEditingTextId] = useState<string | null>(null);
+    const [textInput, setTextInput] = useState('');
+    const [textInputPos, setTextInputPos] = useState({ x: 0, y: 0 });
+
+    const isEmpty = currentFrame && Object.keys(currentFrame.objects).length === 0 && currentFrame.annotations.length === 0 && currentFrame.textAnnotations.length === 0;
 
     useEffect(() => {
         if (!isPlaying || !stageRef.current) return;
@@ -343,22 +279,105 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [setTool, undo, redo, selectedObjectId, deleteObject, setSelectedObject]);
 
+    // Handle Text Input Submit
+    const handleTextSubmit = () => {
+        if (editingTextId === 'NEW') {
+            if (textInput.trim()) {
+                addTextAnnotation({
+                    id: Math.random().toString(36).substr(2, 9),
+                    type: 'text',
+                    x: textInputPos.x,
+                    y: textInputPos.y,
+                    text: textInput,
+                    color: annotationColor,
+                    fontSize: textFontSize,
+                });
+                toast.success('Text added');
+            }
+        } else if (editingTextId) {
+            // Update existing text (not implemented in store yet, but we can delete and add)
+            if (textInput.trim()) {
+                deleteTextAnnotation(editingTextId);
+                addTextAnnotation({
+                    id: editingTextId,
+                    type: 'text',
+                    x: textInputPos.x,
+                    y: textInputPos.y,
+                    text: textInput,
+                    color: annotationColor,
+                    fontSize: textFontSize,
+                });
+            } else {
+                deleteTextAnnotation(editingTextId);
+            }
+        }
+        setEditingTextId(null);
+        setTextInput('');
+        setTool('select');
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (!stageRef.current) return;
         stageRef.current.setPointersPositions(e);
         const pointerPosition = stageRef.current.getPointerPosition();
         const type = e.dataTransfer.getData('type');
+        const data = e.dataTransfer.getData('data');
 
-        if (type && pointerPosition) {
-            const newObject: PlayObject = {
-                id: Math.random().toString(36).substr(2, 9),
-                type: type as any,
-                x: pointerPosition.x,
-                y: pointerPosition.y,
-                label: type === 'player_offense' ? '1' : type === 'player_defense' ? 'X' : undefined,
-            };
-            addObject(newObject);
+        if (pointerPosition) {
+            if (type === 'preset') {
+                const preset = JSON.parse(data);
+                const objectsToAdd: PlayObject[] = preset.objects.map((obj: any) => {
+                    let x = obj.x;
+                    let y = obj.y;
+
+                    // If dropping onto full court, transform coordinates from vertical half-court to horizontal full-court (left side)
+                    if (courtType === 'full') {
+                        // Half Court (Vertical): Width 1200 (Center 600), Height 800 (Hoop ~700)
+                        // Full Court (Horizontal): Width 1200 (Left Hoop ~155), Height 800 (Center 400)
+
+                        // Transform:
+                        // Vertical Center (600, y) -> Horizontal Center (x, 400)
+                        // Vertical Hoop (600, 700) -> Horizontal Hoop (155, 400)
+
+                        const relX = (obj.x - 600); // Distance from center width
+                        const relY = (700 - obj.y); // Distance from hoop
+
+                        x = 155 + relY; // Move right from hoop based on distance from hoop
+                        y = 400 + relX; // Move up/down from center based on width offset
+                    }
+
+                    return {
+                        id: Math.random().toString(36).substr(2, 9),
+                        type: obj.type,
+                        x: x,
+                        y: y,
+                        label: obj.label,
+                        color: obj.color
+                    };
+                });
+                addObjects(objectsToAdd);
+                toast.success(`Applied ${preset.name}`);
+            } else if (type === 'roster_player') {
+                const player = JSON.parse(data);
+                addObject({
+                    id: Math.random().toString(36).substr(2, 9),
+                    type: 'player_offense', // Default to offense, could be configurable
+                    x: pointerPosition.x,
+                    y: pointerPosition.y,
+                    label: player.number,
+                    color: player.color
+                });
+            } else if (type) {
+                const newObject: PlayObject = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    type: type as any,
+                    x: pointerPosition.x,
+                    y: pointerPosition.y,
+                    label: type === 'player_offense' ? '1' : type === 'player_defense' ? 'X' : undefined,
+                };
+                addObject(newObject);
+            }
         }
     };
 
@@ -366,15 +385,31 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
 
     const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
         if (currentTool === 'select') return;
-        setIsDrawing(true);
+
         const pos = e.target.getStage()?.getPointerPosition();
-        if (pos) setCurrentLine([pos.x, pos.y, pos.x, pos.y]);
+        if (!pos) return;
+
+        if (currentTool === 'text') {
+            setTextInputPos(pos);
+            setEditingTextId('NEW');
+            setTextInput('');
+            return;
+        }
+
+        setIsDrawing(true);
+        setCurrentLine([pos.x, pos.y, pos.x, pos.y]);
     };
 
     const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
         if (!isDrawing) return;
         const pos = e.target.getStage()?.getPointerPosition();
-        if (pos) setCurrentLine([currentLine[0], currentLine[1], pos.x, pos.y]);
+        if (pos) {
+            if (currentTool === 'freehand') {
+                setCurrentLine([...currentLine, pos.x, pos.y]);
+            } else {
+                setCurrentLine([currentLine[0], currentLine[1], pos.x, pos.y]);
+            }
+        }
     };
 
     const handleMouseUp = () => {
@@ -383,31 +418,77 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         if (currentLine.length > 0) {
             addAnnotation({
                 id: Math.random().toString(36).substr(2, 9),
-                type: currentTool as 'line' | 'arrow',
+                type: currentTool as 'line' | 'arrow' | 'freehand',
                 points: currentLine,
                 color: annotationColor,
                 strokeWidth: annotationStrokeWidth,
             });
             setCurrentLine([]);
-            toast.success(`${currentTool === 'arrow' ? 'Arrow' : 'Line'} added`);
+            toast.success(`${currentTool.charAt(0).toUpperCase() + currentTool.slice(1)} added`);
         }
     };
 
-    // Register export function
+    // Register export functions
     useEffect(() => {
         if (onRegisterExport) {
-            onRegisterExport(() => {
-                if (!stageRef.current) return;
-                const uri = stageRef.current.toDataURL();
-                const link = document.createElement('a');
-                link.download = `playchalk-frame-${currentFrameIndex + 1}.png`;
-                link.href = uri;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            onRegisterExport({
+                exportImage: () => {
+                    if (!stageRef.current) return;
+                    const uri = stageRef.current.toDataURL();
+                    const link = document.createElement('a');
+                    link.download = `playchalk-frame-${currentFrameIndex + 1}.png`;
+                    link.href = uri;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+                exportVideo: async () => {
+                    if (!stageRef.current) return;
+                    const canvas = stageRef.current.content.querySelector('canvas');
+                    if (!canvas) return;
+
+                    const stream = canvas.captureStream(30);
+                    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                    const chunks: Blob[] = [];
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) chunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'playchalk-animation.webm';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        toast.success('Video exported successfully');
+                    };
+
+                    // Start recording and playback
+                    mediaRecorder.start();
+
+                    // Reset to start
+                    usePlayStore.getState().setCurrentFrame(0);
+                    usePlayStore.getState().togglePlay(); // Start playing
+
+                    // Calculate duration
+                    const totalDuration = frames.reduce((acc, f) => acc + (f.duration || 500), 0);
+
+                    // Stop after duration
+                    setTimeout(() => {
+                        mediaRecorder.stop();
+                        usePlayStore.getState().togglePlay(); // Stop playing
+                    }, totalDuration + 100); // Add buffer
+
+                    toast.success('Recording started... please wait');
+                }
             });
         }
-    }, [onRegisterExport, currentFrameIndex]);
+    }, [onRegisterExport, currentFrameIndex, frames]);
 
     const handleObjectClick = (objId: string) => {
         if (currentTool !== 'select') return;
@@ -456,17 +537,40 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                             onMouseUp={handleMouseUp}
                         >
                             <Layer>
-                                <CourtBackground />
+                                <CourtBackground type={courtType} />
                                 {currentFrame && currentFrame.annotations.map((ann) => (
                                     ann.type === 'arrow' ? (
                                         <Arrow key={ann.id} points={ann.points} stroke={ann.color} strokeWidth={ann.strokeWidth} fill={ann.color} />
+                                    ) : ann.type === 'freehand' ? (
+                                        <Line key={ann.id} points={ann.points} stroke={ann.color} strokeWidth={ann.strokeWidth} tension={0.5} lineCap="round" lineJoin="round" />
                                     ) : (
                                         <Line key={ann.id} points={ann.points} stroke={ann.color} strokeWidth={ann.strokeWidth} />
                                     )
                                 ))}
+                                {currentFrame && currentFrame.textAnnotations.map((text) => (
+                                    <KonvaText
+                                        key={text.id}
+                                        x={text.x}
+                                        y={text.y}
+                                        text={text.text}
+                                        fontSize={text.fontSize}
+                                        fill={text.color}
+                                        fontStyle="bold"
+                                        draggable={currentTool === 'select'}
+                                        onClick={() => {
+                                            if (currentTool === 'select') {
+                                                setEditingTextId(text.id);
+                                                setTextInput(text.text);
+                                                setTextInputPos({ x: text.x, y: text.y });
+                                            }
+                                        }}
+                                    />
+                                ))}
                                 {isDrawing && currentLine.length > 0 && (
                                     currentTool === 'arrow' ? (
                                         <Arrow points={currentLine} stroke="yellow" strokeWidth={2} dash={[5, 5]} />
+                                    ) : currentTool === 'freehand' ? (
+                                        <Line points={currentLine} stroke="yellow" strokeWidth={2} dash={[5, 5]} tension={0.5} />
                                     ) : (
                                         <Line points={currentLine} stroke="yellow" strokeWidth={2} dash={[5, 5]} />
                                     )
@@ -631,6 +735,40 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                 </button>
                                 <button
                                     onClick={handleLabelSave}
+                                    className="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-semibold transition-all"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Text Input Modal */}
+                {editingTextId && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4">
+                            <h3 className="text-lg font-bold text-white mb-4">
+                                {editingTextId === 'NEW' ? 'Add Text' : 'Edit Text'}
+                            </h3>
+                            <input
+                                type="text"
+                                value={textInput}
+                                onChange={(e) => setTextInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
+                                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl font-semibold text-white focus:outline-none focus:border-orange-500"
+                                placeholder="Enter text..."
+                                autoFocus
+                            />
+                            <div className="flex gap-3 mt-4">
+                                <button
+                                    onClick={() => setEditingTextId(null)}
+                                    className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 font-semibold transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleTextSubmit}
                                     className="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-semibold transition-all"
                                 >
                                     Save

@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Trash2, Edit2, Check, Undo2, Redo2, Download } from 'lucide-react';
+import { Trash2, Edit2, Check, Undo2, Redo2, Download, Video } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
 import { PlaysManager } from './PlaysManager';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
 interface HeaderProps {
-    onExport?: () => void;
+    onExportImage?: () => void;
+    onExportVideo?: () => void;
 }
 
-export const Header = ({ onExport }: HeaderProps) => {
+export const Header = ({ onExportImage, onExportVideo }: HeaderProps) => {
     const {
         playName,
         setPlayName,
@@ -136,14 +137,25 @@ export const Header = ({ onExport }: HeaderProps) => {
                     </motion.button>
                 )}
 
-                {onExport && (
+                {onExportImage && (
                     <button
-                        onClick={onExport}
+                        onClick={onExportImage}
                         className="glass-button px-3 py-2 rounded-xl text-gray-300 hover:text-white flex items-center gap-2 text-sm font-semibold"
                         title="Export as Image"
                     >
                         <Download size={16} />
-                        <span className="hidden xl:inline">Export</span>
+                        <span className="hidden xl:inline">Image</span>
+                    </button>
+                )}
+
+                {onExportVideo && (
+                    <button
+                        onClick={onExportVideo}
+                        className="glass-button px-3 py-2 rounded-xl text-gray-300 hover:text-white flex items-center gap-2 text-sm font-semibold"
+                        title="Export as Video"
+                    >
+                        <Video size={16} />
+                        <span className="hidden xl:inline">Video</span>
                     </button>
                 )}
 
@@ -155,8 +167,8 @@ export const Header = ({ onExport }: HeaderProps) => {
                         onClick={handleUndo}
                         disabled={!canUndo}
                         className={`p-2 rounded-lg transition-all ${canUndo
-                                ? 'text-gray-300 hover:text-white hover:bg-white/10'
-                                : 'text-gray-600 cursor-not-allowed'
+                            ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                            : 'text-gray-600 cursor-not-allowed'
                             }`}
                         title="Undo (Ctrl+Z)"
                     >
@@ -167,8 +179,8 @@ export const Header = ({ onExport }: HeaderProps) => {
                         onClick={handleRedo}
                         disabled={!canRedo}
                         className={`p-2 rounded-lg transition-all ${canRedo
-                                ? 'text-gray-300 hover:text-white hover:bg-white/10'
-                                : 'text-gray-600 cursor-not-allowed'
+                            ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                            : 'text-gray-600 cursor-not-allowed'
                             }`}
                         title="Redo (Ctrl+Y)"
                     >

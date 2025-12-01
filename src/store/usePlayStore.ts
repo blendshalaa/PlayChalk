@@ -31,6 +31,8 @@ export const usePlayStore = create<PlayState>()(
             currentPlayId: null,
             showWelcome: true,
             isLooping: false,
+            courtType: 'full',
+            rosters: [],
 
             setShowWelcome: (show) => set({ showWelcome: show }),
 
@@ -271,6 +273,23 @@ export const usePlayStore = create<PlayState>()(
                 get().saveHistory();
             },
 
+            addObjects: (objects) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame) => {
+                        const newObjects = { ...frame.objects };
+                        objects.forEach(obj => {
+                            newObjects[obj.id] = { ...obj };
+                        });
+                        return {
+                            ...frame,
+                            objects: newObjects,
+                        };
+                    });
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
+
             deleteObject: (objectId) => {
                 set((state) => {
                     const newFrames = state.frames.map((frame) => {
@@ -373,6 +392,17 @@ export const usePlayStore = create<PlayState>()(
                     set({ currentFrameIndex: state.frames.length - 1, isPlaying: false });
                 }
             },
+
+            setCourtType: (type) => set({ courtType: type }),
+
+            addRoster: (roster) => set((state) => ({ rosters: [...state.rosters, roster] })),
+            deleteRoster: (rosterId) => set((state) => ({ rosters: state.rosters.filter(r => r.id !== rosterId) })),
+            addPlayerToRoster: (rosterId, player) => set((state) => ({
+                rosters: state.rosters.map(r => r.id === rosterId ? { ...r, players: [...r.players, player] } : r)
+            })),
+            removePlayerFromRoster: (rosterId, playerId) => set((state) => ({
+                rosters: state.rosters.map(r => r.id === rosterId ? { ...r, players: r.players.filter(p => p.id !== playerId) } : r)
+            })),
         }),
         {
             name: 'playchalk-storage',
@@ -386,6 +416,8 @@ export const usePlayStore = create<PlayState>()(
                 savedPlays: state.savedPlays,
                 currentPlayId: state.currentPlayId,
                 showWelcome: state.showWelcome,
+                courtType: state.courtType,
+                rosters: state.rosters,
             }),
         }
     )

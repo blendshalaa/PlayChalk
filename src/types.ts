@@ -11,7 +11,7 @@ export interface PlayObject {
 
 export interface DrawingObject {
     id: string;
-    type: 'line' | 'arrow';
+    type: 'line' | 'arrow' | 'freehand';
     points: number[];
     color: string;
     strokeWidth: number;
@@ -35,7 +35,7 @@ export interface Frame {
     duration?: number;
 }
 
-export type ToolType = 'select' | 'line' | 'arrow' | 'text';
+export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text';
 
 export interface HistoryState {
     frames: Frame[];
@@ -48,6 +48,20 @@ export interface SavedPlay {
     frames: Frame[];
     createdAt: number;
     updatedAt: number;
+}
+
+export interface RosterPlayer {
+    id: string;
+    name: string;
+    number: string;
+    position?: string;
+}
+
+export interface Roster {
+    id: string;
+    name: string;
+    color: string;
+    players: RosterPlayer[];
 }
 
 export interface PlayState {
@@ -67,6 +81,8 @@ export interface PlayState {
     currentPlayId: string | null;
     showWelcome: boolean;
     isLooping: boolean;
+    courtType: 'full' | 'half';
+    rosters: Roster[];
 
     // Actions
     addFrame: () => void;
@@ -78,6 +94,7 @@ export interface PlayState {
     updateObjectLabel: (objectId: string, label: string) => void;
     updateObjectColor: (objectId: string, color: string) => void;
     addObject: (object: PlayObject) => void;
+    addObjects: (objects: PlayObject[]) => void;
     deleteObject: (objectId: string) => void;
     addAnnotation: (annotation: DrawingObject) => void;
     deleteAnnotation: (annotationId: string) => void;
@@ -103,4 +120,11 @@ export interface PlayState {
     toggleLoop: () => void;
     stepForward: () => void;
     stepBackward: () => void;
+    setCourtType: (type: 'full' | 'half') => void;
+
+    // Roster Actions
+    addRoster: (roster: Roster) => void;
+    deleteRoster: (rosterId: string) => void;
+    addPlayerToRoster: (rosterId: string, player: RosterPlayer) => void;
+    removePlayerFromRoster: (rosterId: string, playerId: string) => void;
 }
