@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, MousePointer2, Minus, ArrowRight, Palette, Type, Pencil, LayoutTemplate, Crop, Plus, Trash2 } from 'lucide-react';
+import { X, MousePointer2, Minus, ArrowRight, Palette, Type, Pencil, LayoutTemplate, Crop, Plus, Trash2, Eraser } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -210,6 +210,7 @@ export const Sidebar = () => {
                             icon={<MousePointer2 size={18} />}
                             label="Select & Move"
                             shortcut="S"
+                            tooltip="Select and move objects on the court"
                         />
                         <ToolButton
                             active={currentTool === 'freehand'}
@@ -217,6 +218,7 @@ export const Sidebar = () => {
                             icon={<Pencil size={18} />}
                             label="Freehand"
                             shortcut="F"
+                            tooltip="Draw freehand lines"
                         />
                         <ToolButton
                             active={currentTool === 'line'}
@@ -224,6 +226,7 @@ export const Sidebar = () => {
                             icon={<Minus size={18} />}
                             label="Draw Line"
                             shortcut="L"
+                            tooltip="Draw straight lines"
                         />
                         <ToolButton
                             active={currentTool === 'arrow'}
@@ -231,6 +234,7 @@ export const Sidebar = () => {
                             icon={<ArrowRight size={18} />}
                             label="Draw Arrow"
                             shortcut="A"
+                            tooltip="Draw arrows to show movement"
                         />
                         <ToolButton
                             active={currentTool === 'text'}
@@ -238,6 +242,15 @@ export const Sidebar = () => {
                             icon={<Type size={18} />}
                             label="Add Text"
                             shortcut="T"
+                            tooltip="Click to add text annotations"
+                        />
+                        <ToolButton
+                            active={currentTool === 'eraser'}
+                            onClick={() => setTool('eraser')}
+                            icon={<Eraser size={18} />}
+                            label="Eraser"
+                            shortcut="E"
+                            tooltip="Click annotations to delete them"
                         />
                     </div>
                 </div>
@@ -339,11 +352,12 @@ export const Sidebar = () => {
     );
 };
 
-const DraggableItem = ({ type, label, icon, onDragStart, className = '' }: any) => (
+const DraggableItem = ({ type, label, icon, onDragStart, className = '', tooltip }: any) => (
     <div
         draggable
         onDragStart={(e) => onDragStart(e, type)}
         className={`glass-button p-3 rounded-xl flex flex-col items-center gap-2 cursor-grab active:cursor-grabbing group relative ${className}`}
+        title={tooltip || `Drag to add ${label}`}
     >
         <div className="group-hover:scale-110 transition-transform duration-300">
             {icon}
@@ -357,13 +371,14 @@ const DraggableItem = ({ type, label, icon, onDragStart, className = '' }: any) 
     </div>
 );
 
-const ToolButton = ({ active, onClick, icon, label, shortcut }: any) => (
+const ToolButton = ({ active, onClick, icon, label, shortcut, tooltip }: any) => (
     <button
         onClick={onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all group relative ${active
             ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
             : 'glass-button text-gray-300 hover:text-white'
             }`}
+        title={tooltip || label}
     >
         {icon}
         <span>{label}</span>

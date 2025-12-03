@@ -5,6 +5,7 @@ import { Court } from './components/Court';
 import { Timeline } from './components/Timeline';
 import { Header } from './components/Header';
 import { WelcomeTutorial } from './components/WelcomeTutorial';
+import { KeyboardShortcutsPanel } from './components/KeyboardShortcutsPanel';
 import { usePlayStore } from './store/usePlayStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -57,6 +58,8 @@ function App() {
       <AnimatePresence>
         {showWelcome && <WelcomeTutorial />}
       </AnimatePresence>
+
+      <KeyboardShortcutsPanel />
 
       <div className="relative h-screen w-screen overflow-hidden bg-slate-950">
         {/* Background Effects */}

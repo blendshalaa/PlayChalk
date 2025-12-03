@@ -36,7 +36,7 @@ export interface Frame {
     duration?: number;
 }
 
-export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text';
+export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'eraser';
 
 export interface HistoryState {
     frames: Frame[];
@@ -84,6 +84,8 @@ export interface PlayState {
     isLooping: boolean;
     courtType: 'full' | 'half';
     rosters: Roster[];
+    copiedObject: PlayObject | null;
+    showShortcuts: boolean;
 
     // Actions
     addFrame: () => void;
@@ -132,4 +134,9 @@ export interface PlayState {
     // Ball Attachment Actions
     attachBallToPlayer: (ballId: string, playerId: string) => void;
     detachBall: (ballId: string) => void;
+
+    // Clipboard Actions
+    copyObject: (objectId: string) => void;
+    pasteObject: () => void;
+    toggleShortcuts: () => void;
 }

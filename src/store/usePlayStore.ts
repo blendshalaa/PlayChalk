@@ -33,6 +33,8 @@ export const usePlayStore = create<PlayState>()(
             isLooping: false,
             courtType: 'full',
             rosters: [],
+            copiedObject: null,
+            showShortcuts: false,
 
             setShowWelcome: (show) => set({ showWelcome: show }),
 
@@ -414,18 +416,12 @@ export const usePlayStore = create<PlayState>()(
                         const player = frame.objects[playerId];
 
                         if (ball && player && ball.type === 'ball') {
-                            // Position ball next to player (offset to the right)
-                            const offsetX = 25;
-                            const offsetY = 0;
-
                             return {
                                 ...frame,
                                 objects: {
                                     ...frame.objects,
                                     [ballId]: {
                                         ...ball,
-                                        x: player.x + offsetX,
-                                        y: player.y + offsetY,
                                         attachedTo: playerId,
                                     },
                                 },
@@ -444,12 +440,20 @@ export const usePlayStore = create<PlayState>()(
                         const ball = frame.objects[ballId];
 
                         if (ball && ball.type === 'ball' && ball.attachedTo) {
+                            const attachedPlayer = frame.objects[ball.attachedTo];
+
+                            // Calculate the current visual position before detaching
+                            const currentX = attachedPlayer ? attachedPlayer.x + 25 : ball.x;
+                            const currentY = attachedPlayer ? attachedPlayer.y : ball.y;
+
                             return {
                                 ...frame,
                                 objects: {
                                     ...frame.objects,
                                     [ballId]: {
                                         ...ball,
+                                        x: currentX,
+                                        y: currentY,
                                         attachedTo: undefined,
                                     },
                                 },
@@ -461,6 +465,33 @@ export const usePlayStore = create<PlayState>()(
                 });
                 get().saveHistory();
             },
+
+            // Clipboard Actions
+            copyObject: (objectId) => {
+                const state = get();
+                const currentFrame = state.frames[state.currentFrameIndex];
+                const objectToCopy = currentFrame?.objects[objectId];
+                if (objectToCopy) {
+                    set({ copiedObject: JSON.parse(JSON.stringify(objectToCopy)) });
+                }
+            },
+
+            pasteObject: () => {
+                const state = get();
+                if (state.copiedObject) {
+                    const newObject = {
+                        ...JSON.parse(JSON.stringify(state.copiedObject)),
+                        id: generateId(),
+                        x: state.copiedObject.x + 30,
+                        y: state.copiedObject.y + 30,
+                        attachedTo: undefined, // Don't copy ball attachments
+                    };
+                    get().addObject(newObject);
+                    set({ selectedObjectId: newObject.id });
+                }
+            },
+
+            toggleShortcuts: () => set((state) => ({ showShortcuts: !state.showShortcuts })),
         }),
         {
             name: 'playchalk-storage',
