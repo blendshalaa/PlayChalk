@@ -28,28 +28,10 @@ const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
     const KEY_HEIGHT = 19 * SCALE; // 152 (15ft to backboard + 4ft to baseline)
     const FT_RADIUS = 6 * SCALE; // 48
     const THREE_RADIUS = 23.75 * SCALE; // 190
-    const THREE_CORNER_DIST = 22 * SCALE; // 176 (distance from center Y)
     const RIM_X = 5.25 * SCALE; // 42 (4ft overhang + 1.25ft to center)
     const BACKBOARD_X = 4 * SCALE; // 32
     const RESTRICTED_RADIUS = 4 * SCALE; // 32
     const LINE_WIDTH = 3;
-
-    // 3-Point Line Intersection Calculation (Full Arc Mode)
-    // We want the arc to extend to the baseline (x=0).
-    // Center: RIM_X. Radius: THREE_RADIUS.
-    // x = RIM_X + R * cos(theta) = 0 => cos(theta) = -RIM_X / R
-    const fullArcAngleRad = Math.acos(-RIM_X / THREE_RADIUS);
-    const fullArcAngleDeg = (fullArcAngleRad * 180) / Math.PI; // approx 102.7 degrees
-    // Arc spans from -fullArcAngleDeg to +fullArcAngleDeg
-    // Rotation starts at -fullArcAngleDeg
-
-    // Restricted Area Calculation
-    // Arc from backboard (x=4) around rim (x=5.25)
-    // Relative X of backboard from rim: -1.25
-    // Radius: 4
-    // Angle: acos(-1.25/4)
-    const raAngleRad = Math.acos(-1.25 / 4);
-    const raAngleDeg = (raAngleRad * 180) / Math.PI; // approx 108.2
 
     if (type === 'half') {
         // ... (Keep half court logic or update if needed, but user focused on full court)
@@ -85,20 +67,22 @@ const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
             ? { x: offsetX + courtWidth, y: offsetY, scaleX: -1 }
             : { x: offsetX, y: offsetY };
 
+        // Calculate 3-point line geometry
+        const THREE_PT_CORNER_DIST = 22 * SCALE; // 22ft from corner to basket along baseline
+        const THREE_PT_STRAIGHT_LENGTH = 14 * SCALE; // 14ft straight section from baseline
+
         return (
             <Group {...groupProps}>
-                {/* Key (Paint) */}
+                {/* Key (Paint) - lighter fill */}
                 <Rect
                     x={0}
                     y={(courtHeight - KEY_WIDTH) / 2}
                     width={KEY_HEIGHT}
                     height={KEY_WIDTH}
-                    fill="rgba(234, 88, 12, 0.2)"
-                // stroke="white"
-                // strokeWidth={LINE_WIDTH}
+                    fill="rgba(234, 88, 12, 0.15)"
                 />
 
-                {/* Free Throw Circle */}
+                {/* Free Throw Circle - Solid half inside key */}
                 <Arc
                     x={KEY_HEIGHT}
                     y={courtHeight / 2}
@@ -109,6 +93,8 @@ const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
                     stroke="white"
                     strokeWidth={LINE_WIDTH}
                 />
+
+                {/* Free Throw Circle - Dashed half outside key */}
                 <Arc
                     x={KEY_HEIGHT}
                     y={courtHeight / 2}
@@ -121,16 +107,46 @@ const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
                     dash={[8, 8]}
                 />
 
+                {/* 3-Point Line - Top corner straight section */}
+                <Line
+                    points={[
+                        0, (courtHeight / 2) - KEY_WIDTH / 2 - THREE_PT_CORNER_DIST,
+                        THREE_PT_STRAIGHT_LENGTH, (courtHeight / 2) - KEY_WIDTH / 2 - THREE_PT_CORNER_DIST
+                    ]}
+                    stroke="white"
+                    strokeWidth={LINE_WIDTH}
+                />
 
+                {/* 3-Point Line - Bottom corner straight section */}
+                <Line
+                    points={[
+                        0, (courtHeight / 2) + KEY_WIDTH / 2 + THREE_PT_CORNER_DIST,
+                        THREE_PT_STRAIGHT_LENGTH, (courtHeight / 2) + KEY_WIDTH / 2 + THREE_PT_CORNER_DIST
+                    ]}
+                    stroke="white"
+                    strokeWidth={LINE_WIDTH}
+                />
 
-                {/* 3-Point Line (Full Arc) */}
+                {/* 3-Point Arc - connects the two straight sections */}
                 <Arc
                     x={RIM_X}
                     y={courtHeight / 2}
                     innerRadius={0}
                     outerRadius={THREE_RADIUS}
-                    angle={fullArcAngleDeg * 2}
-                    rotation={-fullArcAngleDeg}
+                    angle={180}
+                    rotation={-90}
+                    stroke="white"
+                    strokeWidth={LINE_WIDTH}
+                />
+
+                {/* Restricted Area Arc */}
+                <Arc
+                    x={RIM_X}
+                    y={courtHeight / 2}
+                    innerRadius={0}
+                    outerRadius={RESTRICTED_RADIUS}
+                    angle={180}
+                    rotation={-90}
                     stroke="white"
                     strokeWidth={LINE_WIDTH}
                 />
@@ -142,18 +158,15 @@ const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
                     strokeWidth={LINE_WIDTH}
                 />
 
-
-
                 {/* Rim */}
                 <KonvaCircle
                     x={RIM_X}
                     y={courtHeight / 2}
                     radius={0.75 * SCALE}
                     stroke="#ea580c"
-                    strokeWidth={2}
+                    strokeWidth={2.5}
+                    fill="none"
                 />
-
-
             </Group>
         );
     };
@@ -838,83 +851,180 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                                 e.target.to({ scaleX: 1.2, scaleY: 1.2, duration: 0.1 });
                                             }}
                                         >
-                                            {/* Selection glow */}
+                                            {/* Selection glow with pulse animation */}
                                             {isSelected && (
                                                 <>
-                                                    <KonvaCircle radius={30} fill="rgba(249, 115, 22, 0.2)" />
-                                                    <KonvaCircle radius={25} stroke="#f97316" strokeWidth={2} dash={[5, 5]} />
+                                                    <KonvaCircle
+                                                        radius={32}
+                                                        fill="rgba(249, 115, 22, 0.15)"
+                                                        opacity={0.8}
+                                                    />
+                                                    <KonvaCircle
+                                                        radius={28}
+                                                        stroke="#f97316"
+                                                        strokeWidth={3}
+                                                        dash={[8, 4]}
+                                                        shadowColor="#f97316"
+                                                        shadowBlur={15}
+                                                        shadowOpacity={0.6}
+                                                    />
                                                 </>
                                             )}
 
                                             {/* Render different object types */}
                                             {obj.type === 'player_offense' && (
                                                 <>
-                                                    {/* Glow effect for selected */}
-                                                    {isSelected && (
-                                                        <KonvaCircle radius={18} fill="rgba(249, 115, 22, 0.3)" blur={10} />
-                                                    )}
-                                                    <KonvaCircle radius={15} fill="white" stroke={obj.color || "#ea580c"} strokeWidth={3} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                    {/* Player circle with 3D gradient effect */}
+                                                    <KonvaCircle
+                                                        radius={18}
+                                                        fillRadialGradientStartPoint={{ x: -5, y: -5 }}
+                                                        fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                                                        fillRadialGradientStartRadius={0}
+                                                        fillRadialGradientEndRadius={18}
+                                                        fillRadialGradientColorStops={[
+                                                            0, 'rgba(255, 255, 255, 0.9)',
+                                                            0.3, obj.color || '#ea580c',
+                                                            1, obj.color || '#ea580c'
+                                                        ]}
+                                                        stroke={obj.color || "#ea580c"}
+                                                        strokeWidth={3}
+                                                        shadowColor="rgba(0, 0, 0, 0.5)"
+                                                        shadowBlur={10}
+                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowOpacity={0.5}
+                                                    />
+                                                    {/* Inner highlight for depth */}
+                                                    <KonvaCircle
+                                                        radius={15}
+                                                        stroke="rgba(255, 255, 255, 0.3)"
+                                                        strokeWidth={2}
+                                                    />
+                                                    {/* Number label */}
                                                     {obj.label && (
-                                                        <KonvaText
-                                                            text={obj.label}
-                                                            fontSize={14}
-                                                            fontStyle="bold"
-                                                            fill={obj.color || "#ea580c"}
-                                                            align="center"
-                                                            verticalAlign="middle"
-                                                            offsetX={7}
-                                                            offsetY={7}
-                                                            width={14}
-                                                            height={14}
-                                                        />
+                                                        <>
+                                                            {/* Label background for contrast */}
+                                                            <KonvaCircle
+                                                                radius={10}
+                                                                fill="rgba(0, 0, 0, 0.2)"
+                                                            />
+                                                            <KonvaText
+                                                                text={obj.label}
+                                                                fontSize={16}
+                                                                fontStyle="bold"
+                                                                fill="white"
+                                                                align="center"
+                                                                verticalAlign="middle"
+                                                                offsetX={8}
+                                                                offsetY={8}
+                                                                width={16}
+                                                                height={16}
+                                                                shadowColor="black"
+                                                                shadowBlur={3}
+                                                                shadowOpacity={0.8}
+                                                            />
+                                                        </>
                                                     )}
                                                 </>
                                             )}
 
                                             {obj.type === 'player_defense' && (
                                                 <>
-                                                    {isSelected && (
-                                                        <KonvaCircle radius={18} fill="rgba(37, 99, 235, 0.3)" blur={10} />
-                                                    )}
-                                                    <Line points={[-12, -12, 12, 12]} stroke={obj.color || "#2563eb"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
-                                                    <Line points={[12, -12, -12, 12]} stroke={obj.color || "#2563eb"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                    {/* Defense X with gradient and glow */}
+                                                    <Line
+                                                        points={[-14, -14, 14, 14]}
+                                                        stroke={obj.color || "#2563eb"}
+                                                        strokeWidth={5}
+                                                        shadowColor="rgba(0, 0, 0, 0.5)"
+                                                        shadowBlur={10}
+                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowOpacity={0.5}
+                                                        lineCap="round"
+                                                    />
+                                                    <Line
+                                                        points={[14, -14, -14, 14]}
+                                                        stroke={obj.color || "#2563eb"}
+                                                        strokeWidth={5}
+                                                        shadowColor="rgba(0, 0, 0, 0.5)"
+                                                        shadowBlur={10}
+                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowOpacity={0.5}
+                                                        lineCap="round"
+                                                    />
+                                                    {/* Inner highlight */}
+                                                    <Line
+                                                        points={[-12, -12, 12, 12]}
+                                                        stroke="rgba(255, 255, 255, 0.3)"
+                                                        strokeWidth={2}
+                                                        lineCap="round"
+                                                    />
+                                                    <Line
+                                                        points={[12, -12, -12, 12]}
+                                                        stroke="rgba(255, 255, 255, 0.3)"
+                                                        strokeWidth={2}
+                                                        lineCap="round"
+                                                    />
                                                 </>
                                             )}
 
                                             {obj.type === 'ball' && (
                                                 <>
-                                                    {isSelected && (
-                                                        <KonvaCircle radius={13} fill="rgba(249, 115, 22, 0.3)" blur={10} />
-                                                    )}
-                                                    {/* Ball with gradient for depth */}
+                                                    {/* Basketball with realistic gradient and seams */}
                                                     <KonvaCircle
-                                                        radius={10}
-                                                        fillRadialGradientStartPoint={{ x: -3, y: -3 }}
+                                                        radius={12}
+                                                        fillRadialGradientStartPoint={{ x: -4, y: -4 }}
                                                         fillRadialGradientEndPoint={{ x: 0, y: 0 }}
                                                         fillRadialGradientStartRadius={0}
-                                                        fillRadialGradientEndRadius={10}
-                                                        fillRadialGradientColorStops={[0, '#ff8c42', 1, '#ea580c']}
-                                                        stroke="black"
-                                                        strokeWidth={1}
-                                                        shadowColor="black"
+                                                        fillRadialGradientEndRadius={12}
+                                                        fillRadialGradientColorStops={[
+                                                            0, '#ff9d5c',
+                                                            0.5, '#f97316',
+                                                            1, '#c2410c'
+                                                        ]}
+                                                        shadowColor="rgba(0, 0, 0, 0.6)"
                                                         shadowBlur={8}
-                                                        shadowOpacity={0.4}
+                                                        shadowOffset={{ x: 2, y: 3 }}
+                                                        shadowOpacity={0.6}
+                                                    />
+                                                    {/* Basketball seam lines */}
+                                                    <Line
+                                                        points={[-8, 0, -4, -6, 0, -8, 4, -6, 8, 0]}
+                                                        stroke="rgba(0, 0, 0, 0.3)"
+                                                        strokeWidth={1.5}
+                                                        tension={0.3}
+                                                        lineCap="round"
+                                                    />
+                                                    <Line
+                                                        points={[-8, 0, -4, 6, 0, 8, 4, 6, 8, 0]}
+                                                        stroke="rgba(0, 0, 0, 0.3)"
+                                                        strokeWidth={1.5}
+                                                        tension={0.3}
+                                                        lineCap="round"
+                                                    />
+                                                    {/* Highlight for shine */}
+                                                    <KonvaCircle
+                                                        x={-3}
+                                                        y={-3}
+                                                        radius={4}
+                                                        fill="rgba(255, 255, 255, 0.4)"
                                                     />
                                                     {/* Attachment indicator */}
                                                     {obj.attachedTo && (
                                                         <>
                                                             <KonvaCircle
-                                                                x={-15}
-                                                                y={-15}
-                                                                radius={4}
+                                                                x={-16}
+                                                                y={-16}
+                                                                radius={5}
                                                                 fill="#10b981"
                                                                 stroke="white"
-                                                                strokeWidth={1}
+                                                                strokeWidth={2}
+                                                                shadowColor="black"
+                                                                shadowBlur={4}
                                                             />
                                                             <Line
-                                                                points={[-13, -13, -8, -8]}
-                                                                stroke="#10b981"
+                                                                points={[-18, -18, -14, -14]}
+                                                                stroke="white"
                                                                 strokeWidth={2}
+                                                                lineCap="round"
                                                             />
                                                         </>
                                                     )}
@@ -924,20 +1034,70 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                             {obj.type === 'screen' && (
                                                 <>
                                                     <Rect x={-20} y={-20} width={40} height={40} fill="transparent" />
-                                                    {isSelected && (
-                                                        <KonvaCircle radius={20} fill="rgba(147, 51, 234, 0.3)" blur={10} />
-                                                    )}
-                                                    <Line points={[0, -15, 0, 15]} stroke={obj.color || "#9333ea"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
-                                                    <Line points={[-15, 15, 15, 15]} stroke={obj.color || "#9333ea"} strokeWidth={4} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                    {/* Screen with 3D effect */}
+                                                    <Line
+                                                        points={[0, -18, 0, 18]}
+                                                        stroke={obj.color || "#9333ea"}
+                                                        strokeWidth={6}
+                                                        shadowColor="rgba(0, 0, 0, 0.5)"
+                                                        shadowBlur={10}
+                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowOpacity={0.5}
+                                                        lineCap="round"
+                                                    />
+                                                    <Line
+                                                        points={[-18, 18, 18, 18]}
+                                                        stroke={obj.color || "#9333ea"}
+                                                        strokeWidth={6}
+                                                        shadowColor="rgba(0, 0, 0, 0.5)"
+                                                        shadowBlur={10}
+                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowOpacity={0.5}
+                                                        lineCap="round"
+                                                    />
+                                                    {/* Highlight for 3D effect */}
+                                                    <Line
+                                                        points={[-2, -16, -2, 16]}
+                                                        stroke="rgba(255, 255, 255, 0.3)"
+                                                        strokeWidth={2}
+                                                        lineCap="round"
+                                                    />
+                                                    <Line
+                                                        points={[-16, 16, 16, 16]}
+                                                        stroke="rgba(255, 255, 255, 0.3)"
+                                                        strokeWidth={2}
+                                                        lineCap="round"
+                                                    />
                                                 </>
                                             )}
 
                                             {obj.type === 'cone' && (
                                                 <>
-                                                    {isSelected && (
-                                                        <KonvaCircle radius={18} fill="rgba(249, 115, 22, 0.3)" blur={10} />
-                                                    )}
-                                                    <RegularPolygon sides={3} radius={15} fill={obj.color || "#f97316"} stroke="black" strokeWidth={1} shadowColor="black" shadowBlur={8} shadowOpacity={0.4} />
+                                                    {/* Cone with 3D gradient */}
+                                                    <RegularPolygon
+                                                        sides={3}
+                                                        radius={16}
+                                                        fillLinearGradientStartPoint={{ x: 0, y: -16 }}
+                                                        fillLinearGradientEndPoint={{ x: 0, y: 16 }}
+                                                        fillLinearGradientColorStops={[
+                                                            0, '#ff9d5c',
+                                                            0.5, obj.color || '#f97316',
+                                                            1, '#c2410c'
+                                                        ]}
+                                                        stroke="rgba(0, 0, 0, 0.3)"
+                                                        strokeWidth={2}
+                                                        shadowColor="rgba(0, 0, 0, 0.5)"
+                                                        shadowBlur={10}
+                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowOpacity={0.5}
+                                                    />
+                                                    {/* Highlight stripe */}
+                                                    <Line
+                                                        points={[-6, 0, 6, 0]}
+                                                        stroke="rgba(255, 255, 255, 0.4)"
+                                                        strokeWidth={2}
+                                                        lineCap="round"
+                                                    />
                                                 </>
                                             )}
                                         </Group>
