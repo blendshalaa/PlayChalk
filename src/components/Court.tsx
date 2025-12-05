@@ -4,7 +4,7 @@ import Konva from 'konva';
 import { MousePointer2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePlayStore } from '../store/usePlayStore';
-import type { PlayObject } from '../types';
+import type { PlayObject, PlayerType } from '../types';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -14,7 +14,7 @@ interface CourtProps {
 }
 
 
-const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
+const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
     // NBA Dimensions (Scale: 8px = 1ft)
     // Court: 94ft x 50ft -> 752px x 400px
     const SCALE = 8;
@@ -239,7 +239,7 @@ const CourtBackground = ({ type }: { type: 'full' | 'half' }) => {
             />
         </Group>
     );
-};
+});
 
 export const Court = ({ onRegisterExport }: CourtProps) => {
     const {
@@ -445,7 +445,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         if (pointerPosition) {
             if (type === 'preset') {
                 const preset = JSON.parse(data);
-                const objectsToAdd: PlayObject[] = preset.objects.map((obj: any) => {
+                const objectsToAdd: PlayObject[] = preset.objects.map((obj: PlayObject) => {
                     let x = obj.x;
                     let y = obj.y;
 
@@ -489,7 +489,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
             } else if (type) {
                 const newObject: PlayObject = {
                     id: Math.random().toString(36).substr(2, 9),
-                    type: type as any,
+                    type: type as PlayerType,
                     x: pointerPosition.x,
                     y: pointerPosition.y,
                     label: type === 'player_offense' ? '1' : type === 'player_defense' ? 'X' : undefined,
@@ -876,50 +876,50 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                                 <>
                                                     {/* Player circle with 3D gradient effect */}
                                                     <KonvaCircle
-                                                        radius={18}
-                                                        fillRadialGradientStartPoint={{ x: -5, y: -5 }}
+                                                        radius={12}
+                                                        fillRadialGradientStartPoint={{ x: -3, y: -3 }}
                                                         fillRadialGradientEndPoint={{ x: 0, y: 0 }}
                                                         fillRadialGradientStartRadius={0}
-                                                        fillRadialGradientEndRadius={18}
+                                                        fillRadialGradientEndRadius={12}
                                                         fillRadialGradientColorStops={[
                                                             0, 'rgba(255, 255, 255, 0.9)',
                                                             0.3, obj.color || '#ea580c',
                                                             1, obj.color || '#ea580c'
                                                         ]}
                                                         stroke={obj.color || "#ea580c"}
-                                                        strokeWidth={3}
+                                                        strokeWidth={2}
                                                         shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={10}
-                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowBlur={6}
+                                                        shadowOffset={{ x: 1, y: 1 }}
                                                         shadowOpacity={0.5}
                                                     />
                                                     {/* Inner highlight for depth */}
                                                     <KonvaCircle
-                                                        radius={15}
+                                                        radius={10}
                                                         stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={2}
+                                                        strokeWidth={1.5}
                                                     />
                                                     {/* Number label */}
                                                     {obj.label && (
                                                         <>
                                                             {/* Label background for contrast */}
                                                             <KonvaCircle
-                                                                radius={10}
+                                                                radius={7}
                                                                 fill="rgba(0, 0, 0, 0.2)"
                                                             />
                                                             <KonvaText
                                                                 text={obj.label}
-                                                                fontSize={16}
+                                                                fontSize={11}
                                                                 fontStyle="bold"
                                                                 fill="white"
                                                                 align="center"
                                                                 verticalAlign="middle"
-                                                                offsetX={8}
-                                                                offsetY={8}
-                                                                width={16}
-                                                                height={16}
+                                                                offsetX={5.5}
+                                                                offsetY={5.5}
+                                                                width={11}
+                                                                height={11}
                                                                 shadowColor="black"
-                                                                shadowBlur={3}
+                                                                shadowBlur={2}
                                                                 shadowOpacity={0.8}
                                                             />
                                                         </>
@@ -931,36 +931,36 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                                 <>
                                                     {/* Defense X with gradient and glow */}
                                                     <Line
-                                                        points={[-14, -14, 14, 14]}
+                                                        points={[-10, -10, 10, 10]}
                                                         stroke={obj.color || "#2563eb"}
-                                                        strokeWidth={5}
+                                                        strokeWidth={4}
                                                         shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={10}
-                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowBlur={6}
+                                                        shadowOffset={{ x: 1, y: 1 }}
                                                         shadowOpacity={0.5}
                                                         lineCap="round"
                                                     />
                                                     <Line
-                                                        points={[14, -14, -14, 14]}
+                                                        points={[10, -10, -10, 10]}
                                                         stroke={obj.color || "#2563eb"}
-                                                        strokeWidth={5}
+                                                        strokeWidth={4}
                                                         shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={10}
-                                                        shadowOffset={{ x: 2, y: 2 }}
+                                                        shadowBlur={6}
+                                                        shadowOffset={{ x: 1, y: 1 }}
                                                         shadowOpacity={0.5}
                                                         lineCap="round"
                                                     />
                                                     {/* Inner highlight */}
                                                     <Line
-                                                        points={[-12, -12, 12, 12]}
+                                                        points={[-8, -8, 8, 8]}
                                                         stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={2}
+                                                        strokeWidth={1.5}
                                                         lineCap="round"
                                                     />
                                                     <Line
-                                                        points={[12, -12, -12, 12]}
+                                                        points={[8, -8, -8, 8]}
                                                         stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={2}
+                                                        strokeWidth={1.5}
                                                         lineCap="round"
                                                     />
                                                 </>

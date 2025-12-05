@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Save, FolderOpen, Plus, Trash2, X, Clock } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Save, FolderOpen, Plus, Trash2, X, Clock, Upload, Download } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,10 +11,13 @@ export const PlaysManager = () => {
         savePlay,
         loadPlay,
         deletePlay,
-        createNewPlay
+        createNewPlay,
+        playName,
+        frames
     } = usePlayStore();
 
     const [isOpen, setIsOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSavePlay = () => {
         savePlay();
@@ -39,6 +42,66 @@ export const PlaysManager = () => {
         createNewPlay();
         setIsOpen(false);
         toast.success('New play created');
+    };
+
+    const handleExportPlay = () => {
+        const playData = {
+            name: playName,
+            frames: frames,
+            version: '1.0',
+            exportedAt: Date.now()
+        };
+        const blob = new Blob([JSON.stringify(playData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${playName.replace(/\s+/g, '_').toLowerCase()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('Play exported to file');
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const content = event.target?.result as string;
+                const playData = JSON.parse(content);
+
+                if (!playData.frames || !Array.isArray(playData.frames)) {
+                    throw new Error('Invalid play file format');
+                }
+
+                // Create a new play with this data
+                createNewPlay();
+                usePlayStore.setState({
+                    playName: playData.name || 'Imported Play',
+                    frames: playData.frames,
+                    currentFrameIndex: 0
+                });
+
+                // Save it immediately so it appears in the list
+                savePlay();
+
+                setIsOpen(false);
+                toast.success('Play imported successfully');
+            } catch (error) {
+                console.error('Import error:', error);
+                toast.error('Failed to import play. Invalid file.');
+            }
+        };
+        reader.readAsText(file);
+        // Reset input
+        e.target.value = '';
     };
 
     const formatDate = (timestamp: number) => {
@@ -71,6 +134,15 @@ export const PlaysManager = () => {
                 </button>
             </div>
 
+            {/* Hidden File Input */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".json"
+                className="hidden"
+            />
+
             {/* Plays Modal */}
             <AnimatePresence>
                 {isOpen && (
@@ -97,12 +169,30 @@ export const PlaysManager = () => {
                                         {savedPlays.length} {savedPlays.length === 1 ? 'play' : 'plays'} saved
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => setIsOpen(false)}
-                                    className="p-2 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                                >
-                                    <X size={24} />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleExportPlay}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors text-sm font-semibold border border-white/5"
+                                        title="Export Current Play"
+                                    >
+                                        <Download size={16} />
+                                        Export Current
+                                    </button>
+                                    <button
+                                        onClick={handleImportClick}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors text-sm font-semibold border border-white/5"
+                                        title="Import Play from JSON"
+                                    >
+                                        <Upload size={16} />
+                                        Import
+                                    </button>
+                                    <button
+                                        onClick={() => setIsOpen(false)}
+                                        className="p-2 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Content */}
@@ -116,12 +206,20 @@ export const PlaysManager = () => {
                                         <p className="text-gray-400 mb-8 max-w-xs mx-auto">
                                             Create your first masterpiece and save it to access it here later.
                                         </p>
-                                        <button
-                                            onClick={handleNewPlay}
-                                            className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20"
-                                        >
-                                            Create First Play
-                                        </button>
+                                        <div className="flex items-center justify-center gap-3">
+                                            <button
+                                                onClick={handleNewPlay}
+                                                className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20"
+                                            >
+                                                Create First Play
+                                            </button>
+                                            <button
+                                                onClick={handleImportClick}
+                                                className="px-6 py-3 rounded-xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all border border-white/10"
+                                            >
+                                                Import Play
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="grid gap-3">
@@ -131,8 +229,8 @@ export const PlaysManager = () => {
                                                 key={play.id}
                                                 onClick={() => handleLoadPlay(play.id)}
                                                 className={`group p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${currentPlayId === play.id
-                                                        ? 'bg-orange-500/10 border-orange-500/50'
-                                                        : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
+                                                    ? 'bg-orange-500/10 border-orange-500/50'
+                                                    : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
                                                     }`}
                                             >
                                                 <div className="flex items-start justify-between relative z-10">
@@ -149,13 +247,43 @@ export const PlaysManager = () => {
                                                             <span>{play.frames.length} frames</span>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={(e) => handleDeletePlay(play.id, e)}
-                                                        className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
-                                                        title="Delete play"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                // Load the play first to ensure we have the data, then export
+                                                                // Ideally we should export from the saved data directly but this is simpler for now
+                                                                // Actually, let's just export the saved play data directly
+                                                                const playData = {
+                                                                    name: play.name,
+                                                                    frames: play.frames,
+                                                                    version: '1.0',
+                                                                    exportedAt: Date.now()
+                                                                };
+                                                                const blob = new Blob([JSON.stringify(playData, null, 2)], { type: 'application/json' });
+                                                                const url = URL.createObjectURL(blob);
+                                                                const link = document.createElement('a');
+                                                                link.href = url;
+                                                                link.download = `${play.name.replace(/\s+/g, '_').toLowerCase()}.json`;
+                                                                document.body.appendChild(link);
+                                                                link.click();
+                                                                document.body.removeChild(link);
+                                                                URL.revokeObjectURL(url);
+                                                                toast.success('Play exported');
+                                                            }}
+                                                            className="p-2 rounded-lg bg-white/5 hover:bg-white/20 text-gray-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                            title="Export Play"
+                                                        >
+                                                            <Download size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => handleDeletePlay(play.id, e)}
+                                                            className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                                                            title="Delete play"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 </div>
 
                                                 {currentPlayId === play.id && (

@@ -297,7 +297,7 @@ export const usePlayStore = create<PlayState>()(
             deleteObject: (objectId) => {
                 set((state) => {
                     const newFrames = state.frames.map((frame) => {
-                        const { [objectId]: _, ...remainingObjects } = frame.objects;
+                        const { [objectId]: _unused, ...remainingObjects } = frame.objects;
                         return {
                             ...frame,
                             objects: remainingObjects,

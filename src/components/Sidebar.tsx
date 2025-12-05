@@ -35,7 +35,7 @@ export const Sidebar = () => {
         addPlayerToRoster
     } = usePlayStore();
 
-    const handleDragStart = (e: React.DragEvent, type: string, data?: any) => {
+    const handleDragStart = (e: React.DragEvent, type: string, data?: unknown) => {
         e.dataTransfer.setData('type', type);
         if (data) {
             e.dataTransfer.setData('data', JSON.stringify(data));
@@ -352,7 +352,7 @@ export const Sidebar = () => {
     );
 };
 
-const DraggableItem = ({ type, label, icon, onDragStart, className = '', tooltip }: any) => (
+const DraggableItem = ({ type, label, icon, onDragStart, className = '', tooltip }: { type: string; label: string; icon: React.ReactNode; onDragStart: (e: React.DragEvent, type: string) => void; className?: string; tooltip?: string }) => (
     <div
         draggable
         onDragStart={(e) => onDragStart(e, type)}
@@ -371,7 +371,7 @@ const DraggableItem = ({ type, label, icon, onDragStart, className = '', tooltip
     </div>
 );
 
-const ToolButton = ({ active, onClick, icon, label, shortcut, tooltip }: any) => (
+const ToolButton = ({ active, onClick, icon, label, shortcut, tooltip }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; shortcut: string; tooltip?: string }) => (
     <button
         onClick={onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all group relative ${active
