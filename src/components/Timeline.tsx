@@ -38,7 +38,7 @@ export const Timeline = () => {
             className="glass-panel rounded-3xl p-4 flex flex-col gap-4"
         >
             {/* Controls Bar */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-y-4">
                 <div className="flex items-center gap-3">
                     {/* Step Backward */}
                     <button
@@ -84,7 +84,7 @@ export const Timeline = () => {
                     <div className="h-8 w-px bg-white/10 mx-2" />
 
                     {/* Speed Controls */}
-                    <div className="flex items-center gap-2 bg-black/20 rounded-xl p-1">
+                    <div className="hidden md:flex items-center gap-2 bg-black/20 rounded-xl p-1">
                         {[200, 500, 1000].map((speed) => (
                             <button
                                 key={speed}

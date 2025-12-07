@@ -48,7 +48,7 @@ export const Sidebar = () => {
         <motion.div
             initial={{ x: -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="w-72 h-full glass-panel rounded-3xl flex flex-col overflow-hidden"
+            className="w-full md:w-72 h-full glass-panel rounded-3xl flex flex-col overflow-hidden"
         >
             {/* Logo Area */}
             <div className="p-6 border-b border-white/5 bg-white/5">

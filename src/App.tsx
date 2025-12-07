@@ -13,6 +13,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 function App() {
   const { showWelcome } = usePlayStore();
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const exportFnsRef = useRef<{ exportImage: () => void; exportVideo: () => void } | null>(null);
 
   const handleRegisterExport = (exports: { exportImage: () => void; exportVideo: () => void }) => {
@@ -78,18 +79,41 @@ function App() {
           {/* Floating UI Layer */}
           <div className="relative z-20 h-full pointer-events-none">
 
-            {/* Sidebar floats on left */}
-            <div className="absolute left-6 top-6 bottom-6 w-auto pointer-events-auto">
-              <Sidebar />
+            {/* Mobile Menu Button */}
+            <div className="absolute top-6 left-6 pointer-events-auto md:hidden z-50">
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-3 rounded-xl bg-slate-900/80 backdrop-blur-md border border-white/10 text-white shadow-lg"
+              >
+                <div className="space-y-1.5">
+                  <div className={`w-6 h-0.5 bg-white transition-transform ${isSidebarOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                  <div className={`w-6 h-0.5 bg-white transition-opacity ${isSidebarOpen ? 'opacity-0' : ''}`} />
+                  <div className={`w-6 h-0.5 bg-white transition-transform ${isSidebarOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+                </div>
+              </button>
             </div>
 
+            {/* Sidebar floats on left */}
+            <AnimatePresence>
+              {isSidebarOpen && (
+                <motion.div
+                  initial={{ x: -300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  className="absolute left-6 top-20 bottom-6 md:top-6 w-auto pointer-events-auto z-40 max-w-[80vw]"
+                >
+                  <Sidebar />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Header floats on top right, offset for Sidebar */}
-            <div className="absolute top-6 left-80 right-6 pointer-events-auto">
+            <div className={`absolute top-6 right-6 pointer-events-auto transition-all duration-300 ${isSidebarOpen ? 'md:left-80' : 'left-6 md:left-6'}`}>
               <Header onExportImage={handleExportImage} onExportVideo={handleExportVideo} />
             </div>
 
             {/* Timeline floats at bottom */}
-            <div className="absolute bottom-0 left-80 right-6 pointer-events-auto flex flex-col items-end pb-6 pl-6">
+            <div className={`absolute bottom-0 right-6 pointer-events-auto flex flex-col items-end pb-6 pl-6 transition-all duration-300 ${isSidebarOpen ? 'md:left-80' : 'left-6'}`}>
               {/* Toggle Button */}
               <motion.button
                 layout

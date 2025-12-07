@@ -213,17 +213,22 @@ export const usePlayStore = create<PlayState>()(
 
             updateObjectPosition: (frameIndex, objectId, x, y) => {
                 set((state) => {
-                    const newFrames = [...state.frames];
-                    const frame = newFrames[frameIndex];
-                    if (frame && frame.objects[objectId]) {
-                        // Update the object position
-                        frame.objects[objectId] = {
-                            ...frame.objects[objectId],
-                            x,
-                            y,
-                        };
-                        // Note: Attached balls don't need position updates - they're calculated on render
-                    }
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === frameIndex && frame.objects[objectId]) {
+                            return {
+                                ...frame,
+                                objects: {
+                                    ...frame.objects,
+                                    [objectId]: {
+                                        ...frame.objects[objectId],
+                                        x,
+                                        y,
+                                    },
+                                },
+                            };
+                        }
+                        return frame;
+                    });
                     return { frames: newFrames };
                 });
                 get().saveHistory();
@@ -313,11 +318,15 @@ export const usePlayStore = create<PlayState>()(
 
             addAnnotation: (annotation) => {
                 set((state) => {
-                    const newFrames = [...state.frames];
-                    const frame = newFrames[state.currentFrameIndex];
-                    if (frame) {
-                        frame.annotations = [...frame.annotations, annotation];
-                    }
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === state.currentFrameIndex) {
+                            return {
+                                ...frame,
+                                annotations: [...frame.annotations, annotation],
+                            };
+                        }
+                        return frame;
+                    });
                     return { frames: newFrames };
                 });
                 get().saveHistory();
@@ -325,11 +334,15 @@ export const usePlayStore = create<PlayState>()(
 
             deleteAnnotation: (annotationId) => {
                 set((state) => {
-                    const newFrames = [...state.frames];
-                    const frame = newFrames[state.currentFrameIndex];
-                    if (frame) {
-                        frame.annotations = frame.annotations.filter(a => a.id !== annotationId);
-                    }
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === state.currentFrameIndex) {
+                            return {
+                                ...frame,
+                                annotations: frame.annotations.filter(a => a.id !== annotationId),
+                            };
+                        }
+                        return frame;
+                    });
                     return { frames: newFrames };
                 });
                 get().saveHistory();
@@ -337,11 +350,15 @@ export const usePlayStore = create<PlayState>()(
 
             addTextAnnotation: (annotation) => {
                 set((state) => {
-                    const newFrames = [...state.frames];
-                    const frame = newFrames[state.currentFrameIndex];
-                    if (frame) {
-                        frame.textAnnotations = [...frame.textAnnotations, annotation];
-                    }
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === state.currentFrameIndex) {
+                            return {
+                                ...frame,
+                                textAnnotations: [...frame.textAnnotations, annotation],
+                            };
+                        }
+                        return frame;
+                    });
                     return { frames: newFrames };
                 });
                 get().saveHistory();
@@ -349,11 +366,15 @@ export const usePlayStore = create<PlayState>()(
 
             deleteTextAnnotation: (annotationId) => {
                 set((state) => {
-                    const newFrames = [...state.frames];
-                    const frame = newFrames[state.currentFrameIndex];
-                    if (frame) {
-                        frame.textAnnotations = frame.textAnnotations.filter(a => a.id !== annotationId);
-                    }
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === state.currentFrameIndex) {
+                            return {
+                                ...frame,
+                                textAnnotations: frame.textAnnotations.filter(a => a.id !== annotationId),
+                            };
+                        }
+                        return frame;
+                    });
                     return { frames: newFrames };
                 });
                 get().saveHistory();

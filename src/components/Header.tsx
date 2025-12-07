@@ -93,7 +93,7 @@ export const Header = ({ onExportImage, onExportVideo }: HeaderProps) => {
                                 onKeyDown={handleKeyDown}
                                 onBlur={handleSaveName}
                                 autoFocus
-                                className="glass-input px-3 py-1.5 rounded-lg text-lg font-bold text-white w-64"
+                                className="glass-input px-3 py-1.5 rounded-lg text-lg font-bold text-white w-32 md:w-64"
                                 placeholder="Enter play name..."
                             />
                             <button

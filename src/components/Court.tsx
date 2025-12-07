@@ -274,6 +274,43 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
 
     const currentFrame = frames[currentFrameIndex];
     const stageRef = useRef<Konva.Stage>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+    const [stageSize, setStageSize] = useState({ width: WIDTH, height: HEIGHT });
+
+    useEffect(() => {
+        const checkSize = () => {
+            if (containerRef.current) {
+                const { width, height } = containerRef.current.getBoundingClientRect();
+                // Subtract padding (32px total for p-4) and border (20px total)
+                // Actually, let's just use the container size and let the stage fit inside
+                // We need to account for the padding of the parent container if we measure it
+                // The parent has p-8 (32px) or p-2 on mobile.
+
+                // Let's measure the available space in the container
+                // Let's measure the available space in the container
+                const availableWidth = width;
+                const availableHeight = height;
+
+                const scaleWidth = availableWidth / WIDTH;
+                const scaleHeight = availableHeight / HEIGHT;
+
+                // Actually, let's just fit.
+                const finalScale = Math.min(scaleWidth, scaleHeight);
+
+                setScale(finalScale);
+                setStageSize({
+                    width: WIDTH * finalScale,
+                    height: HEIGHT * finalScale
+                });
+            }
+        };
+
+        checkSize();
+        window.addEventListener('resize', checkSize);
+        return () => window.removeEventListener('resize', checkSize);
+    }, []);
+
     const nodeRefs = useRef<Record<string, Konva.Node>>({});
 
     const [isDrawing, setIsDrawing] = useState(false);
@@ -434,11 +471,21 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         setTool('select');
     };
 
+    const getLogicalPos = (stage: Konva.Stage) => {
+        const pointer = stage.getPointerPosition();
+        if (!pointer) return null;
+        return {
+            x: pointer.x / scale,
+            y: pointer.y / scale
+        };
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (!stageRef.current) return;
         stageRef.current.setPointersPositions(e);
-        const pointerPosition = stageRef.current.getPointerPosition();
+
+        const pointerPosition = getLogicalPos(stageRef.current);
         const type = e.dataTransfer.getData('type');
         const data = e.dataTransfer.getData('data');
 
@@ -504,7 +551,9 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
     const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
         if (currentTool === 'select') return;
 
-        const pos = e.target.getStage()?.getPointerPosition();
+        const stage = e.target.getStage();
+        if (!stage) return;
+        const pos = getLogicalPos(stage);
         if (!pos) return;
 
         if (currentTool === 'text') {
@@ -520,7 +569,10 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
 
     const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
         if (!isDrawing) return;
-        const pos = e.target.getStage()?.getPointerPosition();
+        const stage = e.target.getStage();
+        if (!stage) return;
+        const pos = getLogicalPos(stage);
+
         if (pos) {
             if (currentTool === 'freehand') {
                 setCurrentLine([...currentLine, pos.x, pos.y]);
@@ -551,8 +603,21 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         if (onRegisterExport) {
             onRegisterExport({
                 exportImage: () => {
-                    if (!stageRef.current) return;
-                    const uri = stageRef.current.toDataURL();
+                    const stage = stageRef.current;
+                    if (!stage) return;
+                    // Reset scale for export to get full resolution
+                    const oldScale = stage.scale();
+                    const oldSize = stage.size();
+
+                    stage.scale({ x: 1, y: 1 });
+                    stage.size({ width: WIDTH, height: HEIGHT });
+
+                    const uri = stage.toDataURL();
+
+                    // Restore scale
+                    stage.scale(oldScale);
+                    stage.size(oldSize);
+
                     const link = document.createElement('a');
                     link.download = `playchalk-frame-${currentFrameIndex + 1}.png`;
                     link.href = uri;
@@ -561,8 +626,22 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                     document.body.removeChild(link);
                 },
                 exportVideo: async () => {
-                    if (!stageRef.current) return;
-                    const canvas = stageRef.current.content.querySelector('canvas');
+                    const stage = stageRef.current;
+                    if (!stage) return;
+
+                    // Note: Video export might need to handle scale or temporarily reset it
+                    // For now, let's capture what's visible or reset?
+                    // Resetting scale for video might be jarring if user is watching
+                    // But for quality, 1x is better.
+                    // Let's try to capture at 1x
+
+                    const oldScale = stage.scale();
+                    const oldSize = stage.size();
+
+                    stage.scale({ x: 1, y: 1 });
+                    stage.size({ width: WIDTH, height: HEIGHT });
+
+                    const canvas = stage.content.querySelector('canvas');
                     if (!canvas) return;
 
                     const stream = canvas.captureStream(30);
@@ -584,6 +663,10 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                         document.body.removeChild(link);
                         URL.revokeObjectURL(url);
                         toast.success('Video exported successfully');
+
+                        // Restore scale
+                        stage.scale(oldScale);
+                        stage.size(oldSize);
                     };
 
                     // Start recording and playback
@@ -606,7 +689,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                 }
             });
         }
-    }, [onRegisterExport, currentFrameIndex, frames]);
+    }, [onRegisterExport, currentFrameIndex, frames, scale]); // Added scale dependency
 
     const handleObjectClick = (objId: string) => {
         if (currentTool !== 'select') return;
@@ -651,7 +734,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
             <div className="flex-1 flex flex-col overflow-hidden relative" onDrop={handleDrop} onDragOver={handleDragOver}>
 
                 {/* Canvas Area */}
-                <div className="absolute inset-0 flex items-center justify-center p-8 overflow-auto">
+                <div ref={containerRef} className="absolute inset-0 flex items-center justify-center p-2 md:p-8 overflow-hidden">
                     {isEmpty && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
                             <div className="text-center max-w-md p-8 rounded-3xl bg-black/20 backdrop-blur-sm border border-white/10">
@@ -666,10 +749,14 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                         </div>
                     )}
 
-                    <div className="shadow-2xl rounded-xl overflow-hidden border-[10px] border-[#5c2b0c] bg-[#d4a373] relative z-0">
+                    <div
+                        className="shadow-2xl rounded-xl overflow-hidden border-[4px] md:border-[10px] border-[#5c2b0c] bg-[#d4a373] relative z-0 transition-all duration-300"
+                        style={{ width: stageSize.width + (window.innerWidth < 768 ? 8 : 20), height: stageSize.height + (window.innerWidth < 768 ? 8 : 20) }}
+                    >
                         <Stage
-                            width={WIDTH}
-                            height={HEIGHT}
+                            width={stageSize.width}
+                            height={stageSize.height}
+                            scale={{ x: scale, y: scale }}
                             ref={stageRef}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
@@ -816,7 +903,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                             key={obj.id}
                                             x={displayX}
                                             y={displayY}
-                                            draggable={!isPlaying && currentTool === 'select' && !obj.attachedTo}
+                                            draggable={!isPlaying && currentTool === 'select' && (!obj.attachedTo || obj.type !== 'ball')}
                                             ref={(node) => { if (node) nodeRefs.current[obj.id] = node; }}
 
                                             dragBoundFunc={(pos) => {
