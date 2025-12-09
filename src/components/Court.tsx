@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Arc, Arrow, Text as KonvaText, RegularPolygon } from 'react-konva';
+import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Arc, Arrow, Text as KonvaText, Transformer } from 'react-konva';
 import Konva from 'konva';
 import { MousePointer2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePlayStore } from '../store/usePlayStore';
 import type { PlayObject, PlayerType } from '../types';
+import { CourtObject } from './CourtObject';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -265,11 +266,11 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         addTextAnnotation,
         deleteTextAnnotation,
         textFontSize,
-        attachBallToPlayer,
-        detachBall,
         copyObject,
         pasteObject,
-        deleteAnnotation
+        deleteAnnotation,
+        updateObjectRotation,
+        updateObjectSize
     } = usePlayStore();
 
     const currentFrame = frames[currentFrameIndex];
@@ -312,6 +313,17 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
     }, []);
 
     const nodeRefs = useRef<Record<string, Konva.Node>>({});
+    const transformerRef = useRef<Konva.Transformer>(null);
+
+    useEffect(() => {
+        if (selectedObjectId && transformerRef.current) {
+            const node = nodeRefs.current[selectedObjectId];
+            if (node) {
+                transformerRef.current.nodes([node]);
+                transformerRef.current.getLayer()?.batchDraw();
+            }
+        }
+    }, [selectedObjectId]);
 
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentLine, setCurrentLine] = useState<number[]>([]);
@@ -409,15 +421,14 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                     e.preventDefault();
                     setTool('eraser');
                     toast.success('Eraser tool');
-                } else if (e.key === 'd' || e.key === 'D') {
-                    if (selectedObjectId) {
-                        const currentFrame = frames[currentFrameIndex];
-                        const selectedObj = currentFrame?.objects[selectedObjectId];
-                        if (selectedObj?.type === 'ball' && selectedObj.attachedTo) {
-                            e.preventDefault();
-                            detachBall(selectedObjectId);
-                            toast.success('Ball detached');
-                        }
+                } else if (e.key === 'p' || e.key === 'P') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        setTool('dashed_arrow');
+                        toast.success('Pass (Arrow) tool');
+                    } else {
+                        setTool('dashed_line');
+                        toast.success('Pass (Line) tool');
                     }
                 } else if (e.key === 'Delete' || e.key === 'Backspace') {
                     if (selectedObjectId) {
@@ -432,7 +443,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [setTool, undo, redo, selectedObjectId, deleteObject, setSelectedObject, copyObject, pasteObject, frames, currentFrameIndex, detachBall]);
+    }, [setTool, undo, redo, selectedObjectId, deleteObject, setSelectedObject, copyObject, pasteObject]);
 
     // Handle Text Input Submit
     const handleTextSubmit = () => {
@@ -588,7 +599,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         if (currentLine.length > 0) {
             addAnnotation({
                 id: Math.random().toString(36).substr(2, 9),
-                type: currentTool as 'line' | 'arrow' | 'freehand',
+                type: currentTool as 'line' | 'arrow' | 'freehand' | 'dashed_line' | 'dashed_arrow',
                 points: currentLine,
                 color: annotationColor,
                 strokeWidth: annotationStrokeWidth,
@@ -693,28 +704,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
 
     const handleObjectClick = (objId: string) => {
         if (currentTool !== 'select') return;
-
-        // Check if we're clicking a player while a ball is selected
-        const selectedObj = selectedObjectId ? currentFrame?.objects[selectedObjectId] : null;
-        const clickedObj = currentFrame?.objects[objId];
-
-        if (selectedObj?.type === 'ball' && clickedObj && (clickedObj.type === 'player_offense' || clickedObj.type === 'player_defense')) {
-            // Attach ball to player
-            attachBallToPlayer(selectedObjectId!, objId);
-            toast.success('Ball attached to player! Press D to detach.');
-            return;
-        }
-
         setSelectedObject(objId);
-
-        // Show helpful message when ball is selected
-        if (clickedObj?.type === 'ball') {
-            if (clickedObj.attachedTo) {
-                toast('Ball is attached. Press D to detach or click another player to transfer.', { icon: '🔗' });
-            } else {
-                toast('Ball selected. Click on a player to attach it.', { icon: '🏀' });
-            }
-        }
     };
 
     const handleLabelEdit = (objId: string, currentLabel?: string) => {
@@ -789,6 +779,31 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                                 if (container) container.style.cursor = 'default';
                                             }}
                                         />
+                                    ) : ann.type === 'dashed_arrow' ? (
+                                        <Arrow
+                                            key={ann.id}
+                                            points={ann.points}
+                                            stroke={ann.color}
+                                            strokeWidth={ann.strokeWidth}
+                                            fill={ann.color}
+                                            dash={[10, 10]}
+                                            onClick={() => {
+                                                if (currentTool === 'eraser') {
+                                                    deleteAnnotation(ann.id);
+                                                    toast.success('Annotation deleted');
+                                                }
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (currentTool === 'eraser') {
+                                                    const container = e.target.getStage()?.container();
+                                                    if (container) container.style.cursor = 'pointer';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const container = e.target.getStage()?.container();
+                                                if (container) container.style.cursor = 'default';
+                                            }}
+                                        />
                                     ) : ann.type === 'freehand' ? (
                                         <Line
                                             key={ann.id}
@@ -798,6 +813,30 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                             tension={0.5}
                                             lineCap="round"
                                             lineJoin="round"
+                                            onClick={() => {
+                                                if (currentTool === 'eraser') {
+                                                    deleteAnnotation(ann.id);
+                                                    toast.success('Annotation deleted');
+                                                }
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (currentTool === 'eraser') {
+                                                    const container = e.target.getStage()?.container();
+                                                    if (container) container.style.cursor = 'pointer';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const container = e.target.getStage()?.container();
+                                                if (container) container.style.cursor = 'default';
+                                            }}
+                                        />
+                                    ) : ann.type === 'dashed_line' ? (
+                                        <Line
+                                            key={ann.id}
+                                            points={ann.points}
+                                            stroke={ann.color}
+                                            strokeWidth={ann.strokeWidth}
+                                            dash={[10, 10]}
                                             onClick={() => {
                                                 if (currentTool === 'eraser') {
                                                     deleteAnnotation(ann.id);
@@ -887,309 +926,45 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                     const isSelected = selectedObjectId === obj.id;
 
                                     // Calculate position - if ball is attached, use player's position + offset
-                                    let displayX = obj.x;
-                                    let displayY = obj.y;
-
-                                    if (obj.type === 'ball' && obj.attachedTo) {
-                                        const attachedPlayer = currentFrame.objects[obj.attachedTo];
-                                        if (attachedPlayer) {
-                                            displayX = attachedPlayer.x + 25; // offset to the right
-                                            displayY = attachedPlayer.y;
-                                        }
-                                    }
+                                    const displayX = obj.x;
+                                    const displayY = obj.y;
 
                                     return (
-                                        <Group
+                                        <CourtObject
                                             key={obj.id}
-                                            x={displayX}
-                                            y={displayY}
-                                            draggable={!isPlaying && currentTool === 'select' && (!obj.attachedTo || obj.type !== 'ball')}
-                                            ref={(node) => { if (node) nodeRefs.current[obj.id] = node; }}
-
-                                            dragBoundFunc={(pos) => {
-                                                const radius = 20;
-                                                return {
-                                                    x: Math.max(radius, Math.min(WIDTH - radius, pos.x)),
-                                                    y: Math.max(radius, Math.min(HEIGHT - radius, pos.y)),
-                                                };
+                                            obj={obj}
+                                            displayX={displayX}
+                                            displayY={displayY}
+                                            isSelected={isSelected}
+                                            isPlaying={isPlaying}
+                                            currentTool={currentTool}
+                                            onDragEnd={(x, y) => updateObjectPosition(currentFrameIndex, obj.id, x, y)}
+                                            onTransformEnd={(rotation, width) => {
+                                                updateObjectRotation(obj.id, rotation);
+                                                if (width) updateObjectSize(obj.id, width, 40);
                                             }}
-
-                                            onDragEnd={(e) => updateObjectPosition(currentFrameIndex, obj.id, e.target.x(), e.target.y())}
                                             onClick={() => handleObjectClick(obj.id)}
                                             onDblClick={() => handleLabelEdit(obj.id, obj.label)}
-
-                                            onMouseEnter={(e) => {
-                                                if (currentTool === 'select') {
-                                                    const container = e.target.getStage()?.container();
-                                                    if (container) container.style.cursor = 'grab';
-                                                    e.target.to({ scaleX: 1.1, scaleY: 1.1, duration: 0.1 });
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (currentTool === 'select') {
-                                                    const container = e.target.getStage()?.container();
-                                                    if (container) container.style.cursor = 'default';
-                                                    e.target.to({ scaleX: 1, scaleY: 1, duration: 0.1 });
-                                                }
-                                            }}
-                                            onDragStart={(e) => {
-                                                const container = e.target.getStage()?.container();
-                                                if (container) container.style.cursor = 'grabbing';
-                                                e.target.to({ scaleX: 1.2, scaleY: 1.2, duration: 0.1 });
-                                            }}
-                                        >
-                                            {/* Selection glow with pulse animation */}
-                                            {isSelected && (
-                                                <>
-                                                    <KonvaCircle
-                                                        radius={32}
-                                                        fill="rgba(249, 115, 22, 0.15)"
-                                                        opacity={0.8}
-                                                    />
-                                                    <KonvaCircle
-                                                        radius={28}
-                                                        stroke="#f97316"
-                                                        strokeWidth={3}
-                                                        dash={[8, 4]}
-                                                        shadowColor="#f97316"
-                                                        shadowBlur={15}
-                                                        shadowOpacity={0.6}
-                                                    />
-                                                </>
-                                            )}
-
-                                            {/* Render different object types */}
-                                            {obj.type === 'player_offense' && (
-                                                <>
-                                                    {/* Player circle with 3D gradient effect */}
-                                                    <KonvaCircle
-                                                        radius={12}
-                                                        fillRadialGradientStartPoint={{ x: -3, y: -3 }}
-                                                        fillRadialGradientEndPoint={{ x: 0, y: 0 }}
-                                                        fillRadialGradientStartRadius={0}
-                                                        fillRadialGradientEndRadius={12}
-                                                        fillRadialGradientColorStops={[
-                                                            0, 'rgba(255, 255, 255, 0.9)',
-                                                            0.3, obj.color || '#ea580c',
-                                                            1, obj.color || '#ea580c'
-                                                        ]}
-                                                        stroke={obj.color || "#ea580c"}
-                                                        strokeWidth={2}
-                                                        shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={6}
-                                                        shadowOffset={{ x: 1, y: 1 }}
-                                                        shadowOpacity={0.5}
-                                                    />
-                                                    {/* Inner highlight for depth */}
-                                                    <KonvaCircle
-                                                        radius={10}
-                                                        stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={1.5}
-                                                    />
-                                                    {/* Number label */}
-                                                    {obj.label && (
-                                                        <>
-                                                            {/* Label background for contrast */}
-                                                            <KonvaCircle
-                                                                radius={7}
-                                                                fill="rgba(0, 0, 0, 0.2)"
-                                                            />
-                                                            <KonvaText
-                                                                text={obj.label}
-                                                                fontSize={11}
-                                                                fontStyle="bold"
-                                                                fill="white"
-                                                                align="center"
-                                                                verticalAlign="middle"
-                                                                offsetX={5.5}
-                                                                offsetY={5.5}
-                                                                width={11}
-                                                                height={11}
-                                                                shadowColor="black"
-                                                                shadowBlur={2}
-                                                                shadowOpacity={0.8}
-                                                            />
-                                                        </>
-                                                    )}
-                                                </>
-                                            )}
-
-                                            {obj.type === 'player_defense' && (
-                                                <>
-                                                    {/* Defense X with gradient and glow */}
-                                                    <Line
-                                                        points={[-10, -10, 10, 10]}
-                                                        stroke={obj.color || "#2563eb"}
-                                                        strokeWidth={4}
-                                                        shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={6}
-                                                        shadowOffset={{ x: 1, y: 1 }}
-                                                        shadowOpacity={0.5}
-                                                        lineCap="round"
-                                                    />
-                                                    <Line
-                                                        points={[10, -10, -10, 10]}
-                                                        stroke={obj.color || "#2563eb"}
-                                                        strokeWidth={4}
-                                                        shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={6}
-                                                        shadowOffset={{ x: 1, y: 1 }}
-                                                        shadowOpacity={0.5}
-                                                        lineCap="round"
-                                                    />
-                                                    {/* Inner highlight */}
-                                                    <Line
-                                                        points={[-8, -8, 8, 8]}
-                                                        stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={1.5}
-                                                        lineCap="round"
-                                                    />
-                                                    <Line
-                                                        points={[8, -8, -8, 8]}
-                                                        stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={1.5}
-                                                        lineCap="round"
-                                                    />
-                                                </>
-                                            )}
-
-                                            {obj.type === 'ball' && (
-                                                <>
-                                                    {/* Basketball with realistic gradient and seams */}
-                                                    <KonvaCircle
-                                                        radius={12}
-                                                        fillRadialGradientStartPoint={{ x: -4, y: -4 }}
-                                                        fillRadialGradientEndPoint={{ x: 0, y: 0 }}
-                                                        fillRadialGradientStartRadius={0}
-                                                        fillRadialGradientEndRadius={12}
-                                                        fillRadialGradientColorStops={[
-                                                            0, '#ff9d5c',
-                                                            0.5, '#f97316',
-                                                            1, '#c2410c'
-                                                        ]}
-                                                        shadowColor="rgba(0, 0, 0, 0.6)"
-                                                        shadowBlur={8}
-                                                        shadowOffset={{ x: 2, y: 3 }}
-                                                        shadowOpacity={0.6}
-                                                    />
-                                                    {/* Basketball seam lines */}
-                                                    <Line
-                                                        points={[-8, 0, -4, -6, 0, -8, 4, -6, 8, 0]}
-                                                        stroke="rgba(0, 0, 0, 0.3)"
-                                                        strokeWidth={1.5}
-                                                        tension={0.3}
-                                                        lineCap="round"
-                                                    />
-                                                    <Line
-                                                        points={[-8, 0, -4, 6, 0, 8, 4, 6, 8, 0]}
-                                                        stroke="rgba(0, 0, 0, 0.3)"
-                                                        strokeWidth={1.5}
-                                                        tension={0.3}
-                                                        lineCap="round"
-                                                    />
-                                                    {/* Highlight for shine */}
-                                                    <KonvaCircle
-                                                        x={-3}
-                                                        y={-3}
-                                                        radius={4}
-                                                        fill="rgba(255, 255, 255, 0.4)"
-                                                    />
-                                                    {/* Attachment indicator */}
-                                                    {obj.attachedTo && (
-                                                        <>
-                                                            <KonvaCircle
-                                                                x={-16}
-                                                                y={-16}
-                                                                radius={5}
-                                                                fill="#10b981"
-                                                                stroke="white"
-                                                                strokeWidth={2}
-                                                                shadowColor="black"
-                                                                shadowBlur={4}
-                                                            />
-                                                            <Line
-                                                                points={[-18, -18, -14, -14]}
-                                                                stroke="white"
-                                                                strokeWidth={2}
-                                                                lineCap="round"
-                                                            />
-                                                        </>
-                                                    )}
-                                                </>
-                                            )}
-
-                                            {obj.type === 'screen' && (
-                                                <>
-                                                    <Rect x={-20} y={-20} width={40} height={40} fill="transparent" />
-                                                    {/* Screen with 3D effect */}
-                                                    <Line
-                                                        points={[0, -18, 0, 18]}
-                                                        stroke={obj.color || "#9333ea"}
-                                                        strokeWidth={6}
-                                                        shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={10}
-                                                        shadowOffset={{ x: 2, y: 2 }}
-                                                        shadowOpacity={0.5}
-                                                        lineCap="round"
-                                                    />
-                                                    <Line
-                                                        points={[-18, 18, 18, 18]}
-                                                        stroke={obj.color || "#9333ea"}
-                                                        strokeWidth={6}
-                                                        shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={10}
-                                                        shadowOffset={{ x: 2, y: 2 }}
-                                                        shadowOpacity={0.5}
-                                                        lineCap="round"
-                                                    />
-                                                    {/* Highlight for 3D effect */}
-                                                    <Line
-                                                        points={[-2, -16, -2, 16]}
-                                                        stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={2}
-                                                        lineCap="round"
-                                                    />
-                                                    <Line
-                                                        points={[-16, 16, 16, 16]}
-                                                        stroke="rgba(255, 255, 255, 0.3)"
-                                                        strokeWidth={2}
-                                                        lineCap="round"
-                                                    />
-                                                </>
-                                            )}
-
-                                            {obj.type === 'cone' && (
-                                                <>
-                                                    {/* Cone with 3D gradient */}
-                                                    <RegularPolygon
-                                                        sides={3}
-                                                        radius={16}
-                                                        fillLinearGradientStartPoint={{ x: 0, y: -16 }}
-                                                        fillLinearGradientEndPoint={{ x: 0, y: 16 }}
-                                                        fillLinearGradientColorStops={[
-                                                            0, '#ff9d5c',
-                                                            0.5, obj.color || '#f97316',
-                                                            1, '#c2410c'
-                                                        ]}
-                                                        stroke="rgba(0, 0, 0, 0.3)"
-                                                        strokeWidth={2}
-                                                        shadowColor="rgba(0, 0, 0, 0.5)"
-                                                        shadowBlur={10}
-                                                        shadowOffset={{ x: 2, y: 2 }}
-                                                        shadowOpacity={0.5}
-                                                    />
-                                                    {/* Highlight stripe */}
-                                                    <Line
-                                                        points={[-6, 0, 6, 0]}
-                                                        stroke="rgba(255, 255, 255, 0.4)"
-                                                        strokeWidth={2}
-                                                        lineCap="round"
-                                                    />
-                                                </>
-                                            )}
-                                        </Group>
+                                            setNodeRef={(node) => { if (node) nodeRefs.current[obj.id] = node; }}
+                                        />
                                     );
                                 })}
+                            </Layer>
+                            <Layer>
+                                {selectedObjectId && currentFrame?.objects[selectedObjectId]?.type === 'screen' && (
+                                    <Transformer
+                                        ref={transformerRef}
+                                        boundBoxFunc={(oldBox, newBox) => {
+                                            // Limit minimum size
+                                            if (newBox.width < 20 || newBox.height < 20) {
+                                                return oldBox;
+                                            }
+                                            return newBox;
+                                        }}
+                                        enabledAnchors={['middle-left', 'middle-right']}
+                                        rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+                                    />
+                                )}
                             </Layer>
                         </Stage>
                     </div>

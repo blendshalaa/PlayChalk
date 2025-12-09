@@ -147,19 +147,118 @@ export const Timeline = () => {
                                 {frame.duration || 500}ms
                             </div>
 
-                            {/* Frame Content Preview (Simplified) */}
-                            <div className="w-full h-full p-4 opacity-50">
-                                {Object.values(frame.objects).map((obj) => (
-                                    <div
-                                        key={obj.id}
-                                        className="absolute w-2 h-2 rounded-full"
-                                        style={{
-                                            left: `${(obj.x / 800) * 100}%`,
-                                            top: `${(obj.y / 600) * 100}%`,
-                                            backgroundColor: obj.type === 'ball' ? '#f97316' : obj.type === 'player_offense' ? '#fff' : '#3b82f6'
-                                        }}
-                                    />
-                                ))}
+                            {/* Frame Content Preview */}
+                            <div className="w-full h-full relative bg-gradient-to-br from-amber-900/20 to-orange-900/20">
+                                {/* Mini court markings */}
+                                <div className="absolute inset-0 opacity-20">
+                                    {/* Center circle */}
+                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border border-white/40" />
+                                    {/* Three-point arc */}
+                                    <div className="absolute left-1/2 bottom-2 -translate-x-1/2 w-16 h-12 rounded-t-full border-t border-l border-r border-white/40" />
+                                    {/* Key */}
+                                    <div className="absolute left-1/2 bottom-2 -translate-x-1/2 w-8 h-8 border-l border-r border-white/40" />
+                                </div>
+
+                                {/* Objects */}
+                                <div className="absolute inset-0 p-2">
+                                    {Object.values(frame.objects).map((obj) => {
+                                        const x = (obj.x / 800) * 100;
+                                        const y = (obj.y / 600) * 100;
+
+                                        if (obj.type === 'player_offense') {
+                                            return (
+                                                <div
+                                                    key={obj.id}
+                                                    className="absolute w-3 h-3 rounded-full border-2 border-orange-400 bg-orange-500/30 flex items-center justify-center"
+                                                    style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+                                                >
+                                                    <span className="text-[6px] font-bold text-white">{obj.label || ''}</span>
+                                                </div>
+                                            );
+                                        }
+
+                                        if (obj.type === 'player_defense') {
+                                            return (
+                                                <div
+                                                    key={obj.id}
+                                                    className="absolute w-3 h-3 flex items-center justify-center"
+                                                    style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" className="text-blue-400">
+                                                        <line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                                        <line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                                    </svg>
+                                                </div>
+                                            );
+                                        }
+
+                                        if (obj.type === 'ball') {
+                                            return (
+                                                <div
+                                                    key={obj.id}
+                                                    className="absolute w-2.5 h-2.5 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-sm"
+                                                    style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+                                                />
+                                            );
+                                        }
+
+                                        if (obj.type === 'screen') {
+                                            return (
+                                                <div
+                                                    key={obj.id}
+                                                    className="absolute w-3 h-4 flex items-center justify-center"
+                                                    style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+                                                >
+                                                    <div className="w-2 h-3 bg-purple-500/60 rounded-sm border border-purple-400" />
+                                                </div>
+                                            );
+                                        }
+
+                                        if (obj.type === 'cone') {
+                                            return (
+                                                <div
+                                                    key={obj.id}
+                                                    className="absolute"
+                                                    style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+                                                >
+                                                    <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-orange-500" />
+                                                </div>
+                                            );
+                                        }
+
+                                        return null;
+                                    })}
+
+                                    {/* Annotations preview */}
+                                    {frame.annotations.map((annotation, idx) => {
+                                        if (annotation.type === 'line' || annotation.type === 'arrow' || annotation.type === 'dashed_line' || annotation.type === 'dashed_arrow') {
+                                            const x1 = (annotation.points[0] / 800) * 100;
+                                            const y1 = (annotation.points[1] / 600) * 100;
+                                            const x2 = (annotation.points[2] / 800) * 100;
+                                            const y2 = (annotation.points[3] / 600) * 100;
+
+                                            return (
+                                                <svg
+                                                    key={idx}
+                                                    className="absolute inset-0 w-full h-full pointer-events-none"
+                                                    style={{ overflow: 'visible' }}
+                                                >
+                                                    <line
+                                                        x1={`${x1}%`}
+                                                        y1={`${y1}%`}
+                                                        x2={`${x2}%`}
+                                                        y2={`${y2}%`}
+                                                        stroke={annotation.color || '#ffffff'}
+                                                        strokeWidth="1"
+                                                        strokeDasharray={annotation.type.includes('dashed') ? '2,2' : undefined}
+                                                        opacity="0.6"
+                                                    />
+                                                </svg>
+                                            );
+                                        }
+                                        return null;
+                                    })}
+                                </div>
                             </div>
 
                             {/* Hover Actions */}

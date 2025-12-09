@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PlayState, Frame, SavedPlay } from '../types';
+import type { PlayState, Frame, SavedPlay, PlayObject } from '../types';
+import { formationPresets } from '../data/presets';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -268,6 +269,41 @@ export const usePlayStore = create<PlayState>()(
                 get().saveHistory();
             },
 
+            updateObjectRotation: (objectId, rotation) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame) => ({
+                        ...frame,
+                        objects: {
+                            ...frame.objects,
+                            [objectId]: frame.objects[objectId] ? {
+                                ...frame.objects[objectId],
+                                rotation,
+                            } : frame.objects[objectId],
+                        },
+                    }));
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
+
+            updateObjectSize: (objectId, width, height) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame) => ({
+                        ...frame,
+                        objects: {
+                            ...frame.objects,
+                            [objectId]: frame.objects[objectId] ? {
+                                ...frame.objects[objectId],
+                                width,
+                                height,
+                            } : frame.objects[objectId],
+                        },
+                    }));
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
+
             addObject: (object) => {
                 set((state) => {
                     const newFrames = state.frames.map((frame) => ({
@@ -429,61 +465,42 @@ export const usePlayStore = create<PlayState>()(
                 rosters: state.rosters.map(r => r.id === rosterId ? { ...r, players: r.players.filter(p => p.id !== playerId) } : r)
             })),
 
-            // Ball Attachment Actions
-            attachBallToPlayer: (ballId, playerId) => {
-                set((state) => {
-                    const newFrames = state.frames.map((frame) => {
-                        const ball = frame.objects[ballId];
-                        const player = frame.objects[playerId];
+            // Formation Preset Actions
+            applyFormationPreset: (presetId) => {
+                const preset = formationPresets.find((p) => p.id === presetId);
 
-                        if (ball && player && ball.type === 'ball') {
-                            return {
-                                ...frame,
-                                objects: {
-                                    ...frame.objects,
-                                    [ballId]: {
-                                        ...ball,
-                                        attachedTo: playerId,
-                                    },
-                                },
-                            };
-                        }
-                        return frame;
+                if (!preset) return;
+
+                set((state) => {
+                    const newFrames = [...state.frames];
+                    const currentFrame = newFrames[state.currentFrameIndex];
+
+                    if (!currentFrame) return state;
+
+                    // Create new objects from preset
+                    const newObjects: Record<string, PlayObject> = {};
+
+                    preset.objects.forEach((presetObj) => {
+                        const id = Math.random().toString(36).substr(2, 9);
+                        newObjects[id] = {
+                            id,
+                            type: presetObj.type,
+                            x: presetObj.x,
+                            y: presetObj.y,
+                            label: presetObj.label,
+                            color: presetObj.type === 'player_offense' ? '#ea580c' : '#2563eb',
+                        };
                     });
+
+                    // Replace current frame objects with preset objects
+                    newFrames[state.currentFrameIndex] = {
+                        ...currentFrame,
+                        objects: newObjects,
+                    };
+
                     return { frames: newFrames };
                 });
-                get().saveHistory();
-            },
 
-            detachBall: (ballId) => {
-                set((state) => {
-                    const newFrames = state.frames.map((frame) => {
-                        const ball = frame.objects[ballId];
-
-                        if (ball && ball.type === 'ball' && ball.attachedTo) {
-                            const attachedPlayer = frame.objects[ball.attachedTo];
-
-                            // Calculate the current visual position before detaching
-                            const currentX = attachedPlayer ? attachedPlayer.x + 25 : ball.x;
-                            const currentY = attachedPlayer ? attachedPlayer.y : ball.y;
-
-                            return {
-                                ...frame,
-                                objects: {
-                                    ...frame.objects,
-                                    [ballId]: {
-                                        ...ball,
-                                        x: currentX,
-                                        y: currentY,
-                                        attachedTo: undefined,
-                                    },
-                                },
-                            };
-                        }
-                        return frame;
-                    });
-                    return { frames: newFrames };
-                });
                 get().saveHistory();
             },
 
@@ -505,7 +522,6 @@ export const usePlayStore = create<PlayState>()(
                         id: generateId(),
                         x: state.copiedObject.x + 30,
                         y: state.copiedObject.y + 30,
-                        attachedTo: undefined, // Don't copy ball attachments
                     };
                     get().addObject(newObject);
                     set({ selectedObjectId: newObject.id });

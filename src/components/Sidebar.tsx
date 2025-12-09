@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, MousePointer2, Minus, ArrowRight, Palette, Type, Pencil, LayoutTemplate, Crop, Plus, Trash2, Eraser } from 'lucide-react';
+import { X, MousePointer2, Minus, ArrowRight, Palette, Type, Pencil, LayoutTemplate, Crop, Plus, Trash2, Eraser, Layers } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FormationPresets } from './FormationPresets';
 
 
 const PRESET_COLORS = [
@@ -42,7 +43,7 @@ export const Sidebar = () => {
         }
     };
 
-    const showDrawingControls = ['line', 'arrow', 'freehand', 'text'].includes(currentTool);
+    const showDrawingControls = ['line', 'arrow', 'freehand', 'text', 'dashed_line', 'dashed_arrow'].includes(currentTool);
 
     return (
         <motion.div
@@ -122,6 +123,17 @@ export const Sidebar = () => {
                             }
                         />
                     </div>
+                </div>
+
+                {/* Formation Presets Section */}
+                <div>
+                    <div className="flex items-center gap-2 mb-3 px-1">
+                        <Layers size={14} className="text-purple-400" />
+                        <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Formation Presets
+                        </h2>
+                    </div>
+                    <FormationPresets />
                 </div>
 
 
@@ -235,6 +247,22 @@ export const Sidebar = () => {
                             label="Draw Arrow"
                             shortcut="A"
                             tooltip="Draw arrows to show movement"
+                        />
+                        <ToolButton
+                            active={currentTool === 'dashed_line'}
+                            onClick={() => setTool('dashed_line')}
+                            icon={<Minus size={18} className="stroke-dashed" strokeDasharray="4 4" />}
+                            label="Pass (Line)"
+                            shortcut="P"
+                            tooltip="Draw dashed lines for passes"
+                        />
+                        <ToolButton
+                            active={currentTool === 'dashed_arrow'}
+                            onClick={() => setTool('dashed_arrow')}
+                            icon={<ArrowRight size={18} className="stroke-dashed" strokeDasharray="4 4" />}
+                            label="Pass (Arrow)"
+                            shortcut="Shift+P"
+                            tooltip="Draw dashed arrows for passes"
                         />
                         <ToolButton
                             active={currentTool === 'text'}

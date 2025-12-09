@@ -7,15 +7,18 @@ export interface PlayObject {
     y: number;
     label?: string;
     color?: string;
-    attachedTo?: string; // ID of the player this ball is attached to
+    rotation?: number;
+    width?: number;
+    height?: number;
 }
 
 export interface DrawingObject {
     id: string;
-    type: 'line' | 'arrow' | 'freehand';
+    type: 'line' | 'arrow' | 'freehand' | 'dashed_line' | 'dashed_arrow';
     points: number[];
     color: string;
     strokeWidth: number;
+    dash?: number[];
 }
 
 export interface TextAnnotation {
@@ -36,7 +39,7 @@ export interface Frame {
     duration?: number;
 }
 
-export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'eraser';
+export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'eraser' | 'dashed_line' | 'dashed_arrow';
 
 export interface HistoryState {
     frames: Frame[];
@@ -96,6 +99,8 @@ export interface PlayState {
     updateObjectPosition: (frameIndex: number, objectId: string, x: number, y: number) => void;
     updateObjectLabel: (objectId: string, label: string) => void;
     updateObjectColor: (objectId: string, color: string) => void;
+    updateObjectRotation: (objectId: string, rotation: number) => void;
+    updateObjectSize: (objectId: string, width: number, height: number) => void;
     addObject: (object: PlayObject) => void;
     addObjects: (objects: PlayObject[]) => void;
     deleteObject: (objectId: string) => void;
@@ -131,9 +136,8 @@ export interface PlayState {
     addPlayerToRoster: (rosterId: string, player: RosterPlayer) => void;
     removePlayerFromRoster: (rosterId: string, playerId: string) => void;
 
-    // Ball Attachment Actions
-    attachBallToPlayer: (ballId: string, playerId: string) => void;
-    detachBall: (ballId: string) => void;
+    // Formation Preset Actions
+    applyFormationPreset: (presetId: string) => void;
 
     // Clipboard Actions
     copyObject: (objectId: string) => void;

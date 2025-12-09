@@ -27,7 +27,7 @@ export const WelcomeTutorial = () => {
         {
             num: 4,
             title: "Draw & Animate",
-            desc: "Use line/arrow tools to show movement. Click Play to watch it come alive!",
+            desc: "Use line/arrow tools (including dashed for passes) to show movement. Click Play to watch it come alive!",
             color: "from-green-400 to-green-600"
         }
     ];
@@ -92,7 +92,7 @@ export const WelcomeTutorial = () => {
 
                         <div className="mt-8 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
                             <p className="text-sm text-blue-200 text-center font-medium">
-                                💡 <span className="font-bold text-white">Pro Tip:</span> Use keyboard shortcuts (S, L, A) to work faster!
+                                💡 <span className="font-bold text-white">Pro Tip:</span> Use keyboard shortcuts (S, L, A, P) to work faster!
                             </p>
                         </div>
                     </div>

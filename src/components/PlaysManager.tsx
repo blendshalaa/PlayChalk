@@ -113,6 +113,12 @@ export const PlaysManager = () => {
         });
     };
 
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredPlays = savedPlays.filter(play =>
+        play.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <>
             <div className="flex items-center gap-2">
@@ -162,7 +168,7 @@ export const PlaysManager = () => {
                             className="relative bg-slate-900 border border-white/10 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden"
                         >
                             {/* Header */}
-                            <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                            <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between gap-4">
                                 <div>
                                     <h2 className="text-2xl font-bold text-white">My Plays</h2>
                                     <p className="text-sm text-gray-400 mt-1">
@@ -176,7 +182,7 @@ export const PlaysManager = () => {
                                         title="Export Current Play"
                                     >
                                         <Download size={16} />
-                                        Export Current
+                                        <span className="hidden sm:inline">Export</span>
                                     </button>
                                     <button
                                         onClick={handleImportClick}
@@ -184,7 +190,7 @@ export const PlaysManager = () => {
                                         title="Import Play from JSON"
                                     >
                                         <Upload size={16} />
-                                        Import
+                                        <span className="hidden sm:inline">Import</span>
                                     </button>
                                     <button
                                         onClick={() => setIsOpen(false)}
@@ -193,6 +199,17 @@ export const PlaysManager = () => {
                                         <X size={24} />
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* Search Bar */}
+                            <div className="px-6 pt-4 pb-0">
+                                <input
+                                    type="text"
+                                    placeholder="Search plays..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500/50 transition-colors"
+                                />
                             </div>
 
                             {/* Content */}
@@ -221,9 +238,13 @@ export const PlaysManager = () => {
                                             </button>
                                         </div>
                                     </div>
+                                ) : filteredPlays.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-400">
+                                        No plays found matching "{searchQuery}"
+                                    </div>
                                 ) : (
                                     <div className="grid gap-3">
-                                        {savedPlays.map((play) => (
+                                        {filteredPlays.map((play) => (
                                             <motion.div
                                                 layout
                                                 key={play.id}
