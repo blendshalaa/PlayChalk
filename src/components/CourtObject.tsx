@@ -12,7 +12,7 @@ interface CourtObjectProps {
     currentTool: string;
     onDragEnd: (x: number, y: number) => void;
     onTransformEnd: (rotation: number, width?: number) => void;
-    onClick: () => void;
+    onClick: (e: Konva.KonvaEventObject<MouseEvent>) => void;
     onDblClick: () => void;
     setNodeRef: (node: Konva.Node | null) => void;
 }
@@ -28,8 +28,49 @@ export const CourtObject = React.memo(({
     onTransformEnd,
     onClick,
     onDblClick,
-    setNodeRef
-}: CourtObjectProps) => {
+    setNodeRef,
+    viewMode = '2d'
+}: CourtObjectProps & { viewMode?: '2d' | '3d' }) => {
+    // Helper to render 3D stack
+    const render3DToken = (color: string, radius: number) => {
+        const layers = 5;
+        const layerHeight = 1;
+        return (
+            <Group>
+                {/* Side/Edge Layers */}
+                {Array.from({ length: layers }).map((_, i) => (
+                    <KonvaCircle
+                        key={i}
+                        y={-i * layerHeight}
+                        radius={radius}
+                        fill={color}
+                        stroke={color}
+                        strokeWidth={1}
+                        shadowColor="black"
+                        shadowBlur={i === 0 ? 10 : 0}
+                        shadowOpacity={i === 0 ? 0.5 : 0}
+                    />
+                ))}
+                {/* Top Face */}
+                <KonvaCircle
+                    y={-layers * layerHeight}
+                    radius={radius}
+                    fillRadialGradientStartPoint={{ x: -3, y: -3 }}
+                    fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                    fillRadialGradientStartRadius={0}
+                    fillRadialGradientEndRadius={radius}
+                    fillRadialGradientColorStops={[
+                        0, 'rgba(255, 255, 255, 0.9)',
+                        0.3, color,
+                        1, color
+                    ]}
+                    stroke={color}
+                    strokeWidth={1}
+                />
+            </Group>
+        );
+    };
+
     return (
         <Group
             x={displayX}
@@ -38,6 +79,7 @@ export const CourtObject = React.memo(({
             draggable={!isPlaying && currentTool === 'select'}
             ref={setNodeRef}
             onDragEnd={(e) => onDragEnd(e.target.x(), e.target.y())}
+            // ... existing event handlers ...
             onTransformEnd={(e) => {
                 const node = e.target;
                 const scaleX = node.scaleX();
@@ -99,54 +141,81 @@ export const CourtObject = React.memo(({
             {/* Render different object types */}
             {obj.type === 'player_offense' && (
                 <>
-                    {/* Player circle with 3D gradient effect */}
-                    <KonvaCircle
-                        radius={10}
-                        fillRadialGradientStartPoint={{ x: -3, y: -3 }}
-                        fillRadialGradientEndPoint={{ x: 0, y: 0 }}
-                        fillRadialGradientStartRadius={0}
-                        fillRadialGradientEndRadius={10}
-                        fillRadialGradientColorStops={[
-                            0, 'rgba(255, 255, 255, 0.9)',
-                            0.3, obj.color || '#ea580c',
-                            1, obj.color || '#ea580c'
-                        ]}
-                        stroke={obj.color || "#ea580c"}
-                        strokeWidth={2}
-                        shadowColor="rgba(0, 0, 0, 0.5)"
-                        shadowBlur={6}
-                        shadowOffset={{ x: 1, y: 1 }}
-                        shadowOpacity={0.5}
-                    />
-                    {/* Inner highlight for depth */}
-                    <KonvaCircle
-                        radius={8}
-                        stroke="rgba(255, 255, 255, 0.3)"
-                        strokeWidth={1.5}
-                    />
-                    {/* Number label */}
-                    {obj.label && (
+                    {viewMode === '3d' ? (
                         <>
-                            {/* Label background for contrast */}
+                            {render3DToken(obj.color || '#ea580c', 10)}
+                            {/* Number label on top of token */}
+                            {obj.label && (
+                                <KonvaText
+                                    y={-6} // Lift label up
+                                    text={obj.label}
+                                    fontSize={10}
+                                    fontStyle="bold"
+                                    fill="white"
+                                    align="center"
+                                    verticalAlign="middle"
+                                    offsetX={5}
+                                    offsetY={5}
+                                    width={10}
+                                    height={10}
+                                    shadowColor="black"
+                                    shadowBlur={2}
+                                    shadowOpacity={0.8}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            {/* Player circle with 3D gradient effect */}
                             <KonvaCircle
-                                radius={6}
-                                fill="rgba(0, 0, 0, 0.2)"
+                                radius={10}
+                                fillRadialGradientStartPoint={{ x: -3, y: -3 }}
+                                fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                                fillRadialGradientStartRadius={0}
+                                fillRadialGradientEndRadius={10}
+                                fillRadialGradientColorStops={[
+                                    0, 'rgba(255, 255, 255, 0.9)',
+                                    0.3, obj.color || '#ea580c',
+                                    1, obj.color || '#ea580c'
+                                ]}
+                                stroke={obj.color || "#ea580c"}
+                                strokeWidth={2}
+                                shadowColor="rgba(0, 0, 0, 0.5)"
+                                shadowBlur={6}
+                                shadowOffset={{ x: 1, y: 1 }}
+                                shadowOpacity={0.5}
                             />
-                            <KonvaText
-                                text={obj.label}
-                                fontSize={10}
-                                fontStyle="bold"
-                                fill="white"
-                                align="center"
-                                verticalAlign="middle"
-                                offsetX={5}
-                                offsetY={5}
-                                width={10}
-                                height={10}
-                                shadowColor="black"
-                                shadowBlur={2}
-                                shadowOpacity={0.8}
+                            {/* Inner highlight for depth */}
+                            <KonvaCircle
+                                radius={8}
+                                stroke="rgba(255, 255, 255, 0.3)"
+                                strokeWidth={1.5}
                             />
+                            {/* Number label */}
+                            {obj.label && (
+                                <>
+                                    {/* Label background for contrast */}
+                                    <KonvaCircle
+                                        radius={6}
+                                        fill="rgba(0, 0, 0, 0.2)"
+                                    />
+                                    <KonvaText
+                                        text={obj.label}
+                                        fontSize={10}
+                                        fontStyle="bold"
+                                        fill="white"
+                                        align="center"
+                                        verticalAlign="middle"
+                                        offsetX={5}
+                                        offsetY={5}
+                                        width={10}
+                                        height={10}
+                                        shadowColor="black"
+                                        shadowBlur={2}
+                                        shadowOpacity={0.8}
+                                    />
+                                </>
+                            )}
                         </>
                     )}
                 </>

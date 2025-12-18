@@ -33,7 +33,13 @@ export const Sidebar = () => {
         rosters,
         addRoster,
         deleteRoster,
-        addPlayerToRoster
+        addPlayerToRoster,
+        viewMode,
+        setViewMode,
+        cameraRotation,
+        setCameraRotation,
+        cameraPitch,
+        setCameraPitch
     } = usePlayStore();
 
     const handleDragStart = (e: React.DragEvent, type: string, data?: unknown) => {
@@ -309,7 +315,62 @@ export const Sidebar = () => {
                             <Crop size={20} />
                             <span className="text-[10px] font-bold">Half Court</span>
                         </button>
+
+                        {/* New View Controls */}
+                        <button
+                            onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
+                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${viewMode === '3d'
+                                ? 'bg-blue-500/20 border-blue-500 text-blue-500'
+                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+                                }`}
+                        >
+                            <div className="relative">
+                                <LayoutTemplate size={20} className="transform rotate-12" />
+                            </div>
+                            <span className="text-[10px] font-bold">3D View</span>
+                        </button>
                     </div>
+
+                    {/* Camera Controls - Only in 3D Mode */}
+                    <AnimatePresence>
+                        {viewMode === '3d' && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="mt-3 space-y-3 bg-white/5 p-3 rounded-xl border border-white/10 overflow-hidden"
+                            >
+                                <div>
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                                        <span>Rotation</span>
+                                        <span>{cameraRotation}°</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="-180"
+                                        max="180"
+                                        value={cameraRotation}
+                                        onChange={(e) => setCameraRotation(Number(e.target.value))}
+                                        className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                                    />
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                                        <span>Tilt</span>
+                                        <span>{cameraPitch}°</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="85"
+                                        value={cameraPitch}
+                                        onChange={(e) => setCameraPitch(Number(e.target.value))}
+                                        className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Drawing Controls */}

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Sidebar } from './components/Sidebar';
 import { Court } from './components/Court';
@@ -6,6 +6,7 @@ import { Timeline } from './components/Timeline';
 import { Header } from './components/Header';
 import { WelcomeTutorial } from './components/WelcomeTutorial';
 import { KeyboardShortcutsPanel } from './components/KeyboardShortcutsPanel';
+import { AlignmentToolbar } from './components/AlignmentToolbar';
 import { usePlayStore } from './store/usePlayStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -14,9 +15,9 @@ function App() {
   const { showWelcome } = usePlayStore();
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
-  const exportFnsRef = useRef<{ exportImage: () => void; exportVideo: () => void } | null>(null);
+  const exportFnsRef = useRef<{ exportImage: () => void } | null>(null);
 
-  const handleRegisterExport = (exports: { exportImage: () => void; exportVideo: () => void }) => {
+  const handleRegisterExport = (exports: { exportImage: () => void }) => {
     exportFnsRef.current = exports;
   };
 
@@ -109,8 +110,9 @@ function App() {
 
             {/* Header floats on top right, offset for Sidebar */}
             <div className={`absolute top-6 right-6 pointer-events-auto transition-all duration-300 ${isSidebarOpen ? 'md:left-80' : 'left-6 md:left-6'}`}>
-              <Header onExportImage={handleExportImage} onExportVideo={handleExportVideo} />
-            </div>
+              <Header
+                onExportImage={() => exportFnsRef.current?.exportImage()}
+              /></div>
 
             {/* Timeline floats at bottom */}
             <div className={`absolute bottom-0 right-6 pointer-events-auto flex flex-col items-end pb-6 pl-6 transition-all duration-300 ${isSidebarOpen ? 'md:left-80' : 'left-6'}`}>
@@ -137,6 +139,9 @@ function App() {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Alignment Toolbar */}
+            <AlignmentToolbar />
           </div>
         </div>
       </div>

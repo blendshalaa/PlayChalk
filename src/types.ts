@@ -14,11 +14,24 @@ export interface PlayObject {
 
 export interface DrawingObject {
     id: string;
-    type: 'line' | 'arrow' | 'freehand' | 'dashed_line' | 'dashed_arrow';
+    type: 'line' | 'arrow' | 'freehand' | 'dashed_line' | 'dashed_arrow' | 'curved_arrow';
     points: number[];
     color: string;
     strokeWidth: number;
     dash?: number[];
+}
+
+export interface ShapeObject {
+    id: string;
+    type: 'rectangle' | 'circle' | 'ellipse';
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fill: string;
+    fillOpacity: number;
+    stroke: string;
+    strokeWidth: number;
 }
 
 export interface TextAnnotation {
@@ -35,11 +48,15 @@ export interface Frame {
     id: string;
     objects: Record<string, PlayObject>;
     annotations: DrawingObject[];
+    shapes: ShapeObject[];
     textAnnotations: TextAnnotation[];
     duration?: number;
 }
 
-export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'eraser' | 'dashed_line' | 'dashed_arrow';
+export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'eraser' | 'dashed_line' | 'dashed_arrow' | 'curved_arrow' | 'rectangle' | 'circle';
+
+export type AlignmentType = 'left' | 'right' | 'top' | 'bottom' | 'center-h' | 'center-v';
+export type DistributionType = 'horizontal' | 'vertical';
 
 export interface HistoryState {
     frames: Frame[];
@@ -50,6 +67,8 @@ export interface SavedPlay {
     id: string;
     name: string;
     frames: Frame[];
+    category: string;
+    tags: string[];
     createdAt: number;
     updatedAt: number;
 }
@@ -75,22 +94,36 @@ export interface PlayState {
     playbackSpeed: number;
     currentTool: ToolType;
     playName: string;
-    selectedObjectId: string | null;
+    selectedObjectIds: string[];
     annotationColor: string;
     annotationStrokeWidth: number;
+    shapeFillOpacity: number;
     textFontSize: number;
     history: HistoryState[];
     historyIndex: number;
     savedPlays: SavedPlay[];
     currentPlayId: string | null;
+    currentPlayCategory: string;
+    currentPlayTags: string[];
+    availableTags: string[];
+    frameThumbnails: Record<string, string>;
     showWelcome: boolean;
     isLooping: boolean;
     courtType: 'full' | 'half';
     rosters: Roster[];
     copiedObject: PlayObject | null;
     showShortcuts: boolean;
+    autoSaveEnabled: boolean;
+    lastAutoSave: number;
+    viewMode: '2d' | '3d';
+    cameraRotation: number;
+    cameraPitch: number;
 
     // Actions
+    setViewMode: (mode: '2d' | '3d') => void;
+    setCameraRotation: (rotation: number) => void;
+    setCameraPitch: (pitch: number) => void;
+    setFrames: (frames: Frame[]) => void;
     addFrame: () => void;
     deleteFrame: (index: number) => void;
     duplicateFrame: (index: number) => void;
@@ -115,6 +148,7 @@ export interface PlayState {
     setSelectedObject: (objectId: string | null) => void;
     setAnnotationColor: (color: string) => void;
     setAnnotationStrokeWidth: (width: number) => void;
+    setShapeFillOpacity: (opacity: number) => void;
     setTextFontSize: (size: number) => void;
     clearCanvas: () => void;
     undo: () => void;
@@ -130,6 +164,30 @@ export interface PlayState {
     stepBackward: () => void;
     setCourtType: (type: 'full' | 'half') => void;
 
+    // Multi-select Actions
+    selectMultipleObjects: (objectIds: string[]) => void;
+    toggleObjectSelection: (objectId: string) => void;
+    clearSelection: () => void;
+    selectAllObjects: () => void;
+    deleteSelectedObjects: () => void;
+    alignObjects: (alignment: AlignmentType) => void;
+    distributeObjects: (direction: DistributionType) => void;
+
+    // Shape Actions
+    addShape: (shape: ShapeObject) => void;
+    deleteShape: (shapeId: string) => void;
+    updateShapeProperties: (shapeId: string, props: Partial<ShapeObject>) => void;
+
+    // Tag & Category Actions
+    setPlayCategory: (category: string) => void;
+    setPlayTags: (tags: string[]) => void;
+    addCustomTag: (tag: string) => void;
+    updatePlayMetadata: (playId: string, category: string, tags: string[]) => void;
+
+    // Thumbnail Actions
+    setFrameThumbnail: (frameId: string, dataUrl: string) => void;
+    clearThumbnailCache: () => void;
+
     // Roster Actions
     addRoster: (roster: Roster) => void;
     deleteRoster: (rosterId: string) => void;
@@ -143,4 +201,8 @@ export interface PlayState {
     copyObject: (objectId: string) => void;
     pasteObject: () => void;
     toggleShortcuts: () => void;
+
+    // Auto-save Actions
+    setAutoSaveEnabled: (enabled: boolean) => void;
+    triggerAutoSave: () => void;
 }

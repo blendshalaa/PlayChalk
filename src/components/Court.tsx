@@ -11,9 +11,14 @@ const WIDTH = 800;
 const HEIGHT = 600;
 
 interface CourtProps {
-    onRegisterExport: (exports: { exportImage: () => void; exportVideo: () => void }) => void;
+    onRegisterExport: (exports: { exportImage: () => void }) => void;
 }
 
+
+// Easing function
+const easeInOutCubic = (t: number): number => {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+};
 
 const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
     // NBA Dimensions (Scale: 8px = 1ft)
@@ -35,20 +40,22 @@ const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
     const LINE_WIDTH = 3;
 
     if (type === 'half') {
-        // ... (Keep half court logic or update if needed, but user focused on full court)
-        // For now, let's just return the previous half court but maybe cleaner?
-        // The user said "redo the whole court", but specifically "full court line".
-        // I'll leave half court as is for now to minimize risk, or update it to match style?
-        // Let's update half court to use the same constants for consistency if possible,
-        // but it uses a vertical layout which requires coordinate swapping.
-        // To be safe and focused, I will stick to fixing the FULL COURT first as requested.
         return (
             <Group>
                 <Rect width={WIDTH} height={HEIGHT} fill="#d4a373" />
+                {/* Wood Pattern - Vertical Planks */}
                 {Array.from({ length: 60 }).map((_, i) => (
                     <Rect key={i} x={0} y={i * (HEIGHT / 60)} width={WIDTH} height={HEIGHT / 60} fill={i % 2 === 0 ? "rgba(0,0,0,0.03)" : "transparent"} />
                 ))}
-                <Rect x={offsetX} y={offsetY} width={600} height={500} stroke="white" strokeWidth={LINE_WIDTH} shadowColor="black" shadowBlur={3} shadowOpacity={0.2} />
+                {/* Wood Grain Texture Overlay */}
+                <Rect
+                    width={WIDTH}
+                    height={HEIGHT}
+                    fill="rgba(139, 69, 19, 0.1)" // Slight brown tint
+                    listening={false}
+                />
+
+                <Rect x={offsetX} y={offsetY} width={600} height={500} stroke="white" strokeWidth={LINE_WIDTH} shadowColor="black" shadowBlur={10} shadowOpacity={0.3} />
                 {/* Simplified Half Court (Vertical) - Keeping existing logic but with thinner lines */}
                 <Group y={offsetY + 500}>
                     <Rect x={offsetX + (600 - 200) / 2} y={-220} width={200} height={220} fill="rgba(234, 88, 12, 0.2)" stroke="white" strokeWidth={LINE_WIDTH} />
@@ -157,6 +164,9 @@ const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
                     points={[BACKBOARD_X, (courtHeight / 2) - (3 * SCALE), BACKBOARD_X, (courtHeight / 2) + (3 * SCALE)]}
                     stroke="white"
                     strokeWidth={LINE_WIDTH}
+                    shadowColor="black"
+                    shadowBlur={5}
+                    shadowOpacity={0.3}
                 />
 
                 {/* Rim */}
@@ -167,6 +177,9 @@ const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
                     stroke="#ea580c"
                     strokeWidth={2.5}
                     fill="none"
+                    shadowColor="black"
+                    shadowBlur={2}
+                    shadowOpacity={0.3}
                 />
             </Group>
         );
@@ -174,19 +187,31 @@ const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
 
     return (
         <Group>
-            {/* Floor Base */}
-            <Rect width={WIDTH} height={HEIGHT} fill="#d4a373" />
-            {/* Wood Pattern */}
-            {Array.from({ length: 60 }).map((_, i) => (
+            {/* Floor Base - Richer Wood Color */}
+            <Rect width={WIDTH} height={HEIGHT} fill="#c19a6b" />
+
+            {/* Wood Pattern - Horizontal Planks for Full Court */}
+            {Array.from({ length: 80 }).map((_, i) => (
                 <Rect
                     key={i}
                     x={0}
-                    y={i * (HEIGHT / 60)}
+                    y={i * (HEIGHT / 80)}
                     width={WIDTH}
-                    height={HEIGHT / 60}
-                    fill={i % 2 === 0 ? "rgba(0,0,0,0.03)" : "transparent"}
+                    height={HEIGHT / 80}
+                    fill={i % 2 === 0 ? "rgba(101, 67, 33, 0.05)" : "transparent"}
                 />
             ))}
+
+            {/* Random Wood Grain Variation (Simulated with random opacity rectangles) */}
+            {/* This is expensive to render too many, so we keep it simple or use a large rect with gradient */}
+            <Rect
+                width={WIDTH}
+                height={HEIGHT}
+                fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+                fillLinearGradientEndPoint={{ x: WIDTH, y: HEIGHT }}
+                fillLinearGradientColorStops={[0, 'rgba(0,0,0,0)', 0.5, 'rgba(139,69,19,0.05)', 1, 'rgba(0,0,0,0)']}
+                listening={false}
+            />
 
             {/* Court Boundary */}
             <Rect
@@ -197,7 +222,7 @@ const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
                 stroke="white"
                 strokeWidth={LINE_WIDTH}
                 shadowColor="black"
-                shadowBlur={3}
+                shadowBlur={5}
                 shadowOpacity={0.2}
             />
 
@@ -223,19 +248,48 @@ const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
                 radius={2 * SCALE}
                 stroke="white"
                 strokeWidth={LINE_WIDTH}
+                fill="#c19a6b" // Fill to cover line
             />
 
             {/* Render Sides */}
             {renderCourtSide(false)}
             {renderCourtSide(true)}
 
-            {/* Shine Effect */}
+            {/* Shine/Reflection Effect - Enhanced */}
             <Rect
                 width={WIDTH}
                 height={HEIGHT}
                 fillLinearGradientStartPoint={{ x: 0, y: 0 }}
                 fillLinearGradientEndPoint={{ x: WIDTH, y: HEIGHT }}
-                fillLinearGradientColorStops={[0, 'rgba(255,255,255,0.15)', 0.3, 'transparent', 0.7, 'transparent', 1, 'rgba(0,0,0,0.15)']}
+                fillLinearGradientColorStops={[
+                    0, 'rgba(255,255,255,0.1)',
+                    0.4, 'transparent',
+                    0.6, 'transparent',
+                    1, 'rgba(255,255,255,0.05)'
+                ]}
+                listening={false}
+            />
+            {/* Spotlights Reflection */}
+            <KonvaCircle
+                x={WIDTH * 0.3}
+                y={HEIGHT * 0.3}
+                radius={100}
+                fillRadialGradientStartPoint={{ x: 0, y: 0 }}
+                fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                fillRadialGradientStartRadius={0}
+                fillRadialGradientEndRadius={100}
+                fillRadialGradientColorStops={[0, 'rgba(255,255,255,0.1)', 1, 'transparent']}
+                listening={false}
+            />
+            <KonvaCircle
+                x={WIDTH * 0.7}
+                y={HEIGHT * 0.7}
+                radius={100}
+                fillRadialGradientStartPoint={{ x: 0, y: 0 }}
+                fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                fillRadialGradientStartRadius={0}
+                fillRadialGradientEndRadius={100}
+                fillRadialGradientColorStops={[0, 'rgba(255,255,255,0.1)', 1, 'transparent']}
                 listening={false}
             />
         </Group>
@@ -249,14 +303,19 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         addObject,
         addObjects,
         updateObjectPosition,
-        deleteObject,
+        // deleteObject, // Unused
         isPlaying,
         playbackSpeed,
         currentTool,
         setTool,
         addAnnotation,
-        selectedObjectId,
+        selectedObjectIds,
         setSelectedObject,
+        selectMultipleObjects,
+        toggleObjectSelection,
+        clearSelection,
+        selectAllObjects,
+        deleteSelectedObjects,
         updateObjectLabel,
         annotationColor,
         annotationStrokeWidth,
@@ -270,7 +329,12 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         pasteObject,
         deleteAnnotation,
         updateObjectRotation,
-        updateObjectSize
+        updateObjectSize,
+        // addShape, // Unused
+        // shapeFillOpacity, // Unused
+        viewMode,
+        cameraRotation,
+        cameraPitch
     } = usePlayStore();
 
     const currentFrame = frames[currentFrameIndex];
@@ -316,26 +380,35 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
     const transformerRef = useRef<Konva.Transformer>(null);
 
     useEffect(() => {
-        if (selectedObjectId && transformerRef.current) {
-            const node = nodeRefs.current[selectedObjectId];
-            if (node) {
-                transformerRef.current.nodes([node]);
+        if (selectedObjectIds && selectedObjectIds.length > 0 && transformerRef.current) {
+            const nodes = selectedObjectIds
+                .map(id => nodeRefs.current[id])
+                .filter(Boolean);
+            if (nodes.length > 0) {
+                transformerRef.current.nodes(nodes);
                 transformerRef.current.getLayer()?.batchDraw();
             }
+        } else if (transformerRef.current) {
+            transformerRef.current.nodes([]);
+            transformerRef.current.getLayer()?.batchDraw();
         }
-    }, [selectedObjectId]);
+    }, [selectedObjectIds]);
 
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentLine, setCurrentLine] = useState<number[]>([]);
     const [editingLabel, setEditingLabel] = useState<string | null>(null);
     const [labelInput, setLabelInput] = useState('');
 
+    // Selection rectangle state
+    const [selectionRect, setSelectionRect] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+    const [isSelectingRect, setIsSelectingRect] = useState(false);
+
     // Text Annotation State
     const [editingTextId, setEditingTextId] = useState<string | null>(null);
     const [textInput, setTextInput] = useState('');
     const [textInputPos, setTextInputPos] = useState({ x: 0, y: 0 });
 
-    const isEmpty = currentFrame && Object.keys(currentFrame.objects).length === 0 && currentFrame.annotations.length === 0 && currentFrame.textAnnotations.length === 0;
+    const isEmpty = currentFrame && Object.keys(currentFrame.objects).length === 0 && currentFrame.annotations.length === 0 && currentFrame.shapes.length === 0 && currentFrame.textAnnotations.length === 0;
 
     useEffect(() => {
         if (!isPlaying || !stageRef.current) return;
@@ -347,7 +420,11 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
             const time = frame.time % totalDuration;
             const frameIndex = Math.floor(time / playbackSpeed);
             const nextFrameIndex = frameIndex + 1;
-            const progress = (time % playbackSpeed) / playbackSpeed;
+
+            // Use Easing
+            const rawProgress = (time % playbackSpeed) / playbackSpeed;
+            const progress = easeInOutCubic(rawProgress);
+
             const startFrame = frames[frameIndex];
             const endFrame = frames[nextFrameIndex];
             if (!startFrame || !endFrame) return;
@@ -386,15 +463,19 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                     redo();
                     toast.success('Redone');
                 } else if (e.key === 'c') {
-                    if (selectedObjectId) {
+                    if (selectedObjectIds && selectedObjectIds.length > 0) {
                         e.preventDefault();
-                        copyObject(selectedObjectId);
+                        copyObject(selectedObjectIds[0]);
                         toast.success('Object copied');
                     }
                 } else if (e.key === 'v') {
                     e.preventDefault();
                     pasteObject();
                     toast.success('Object pasted');
+                } else if (e.key === 'a') {
+                    e.preventDefault();
+                    selectAllObjects();
+                    toast.success('All objects selected');
                 }
             } else {
                 if (e.key === 's' || e.key === 'S') {
@@ -431,19 +512,22 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                         toast.success('Pass (Line) tool');
                     }
                 } else if (e.key === 'Delete' || e.key === 'Backspace') {
-                    if (selectedObjectId) {
+                    if (selectedObjectIds && selectedObjectIds.length > 0) {
                         e.preventDefault();
-                        deleteObject(selectedObjectId);
-                        setSelectedObject(null);
-                        toast.success('Object deleted');
+                        deleteSelectedObjects();
+                        toast.success(`Deleted ${selectedObjectIds.length} object(s)`);
                     }
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    clearSelection();
+                    setSelectionRect(null);
                 }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [setTool, undo, redo, selectedObjectId, deleteObject, setSelectedObject, copyObject, pasteObject]);
+    }, [setTool, undo, redo, selectedObjectIds, deleteSelectedObjects, setSelectedObject, copyObject, pasteObject, selectAllObjects, clearSelection]);
 
     // Handle Text Input Submit
     const handleTextSubmit = () => {
@@ -560,12 +644,22 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
     const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
     const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-        if (currentTool === 'select') return;
-
         const stage = e.target.getStage();
         if (!stage) return;
         const pos = getLogicalPos(stage);
         if (!pos) return;
+
+        // Handle selection rectangle for select tool
+        if (currentTool === 'select' && e.target === e.target.getStage()) {
+            if (!e.evt.shiftKey) {
+                clearSelection();
+            }
+            setIsSelectingRect(true);
+            setSelectionRect({ x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y });
+            return;
+        }
+
+        if (currentTool === 'select') return;
 
         if (currentTool === 'text') {
             setTextInputPos(pos);
@@ -579,21 +673,49 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
     };
 
     const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-        if (!isDrawing) return;
         const stage = e.target.getStage();
         if (!stage) return;
         const pos = getLogicalPos(stage);
+        if (!pos) return;
 
-        if (pos) {
-            if (currentTool === 'freehand') {
-                setCurrentLine([...currentLine, pos.x, pos.y]);
-            } else {
-                setCurrentLine([currentLine[0], currentLine[1], pos.x, pos.y]);
-            }
+        // Update selection rectangle
+        if (isSelectingRect && selectionRect) {
+            setSelectionRect({ ...selectionRect, x2: pos.x, y2: pos.y });
+            return;
+        }
+
+        if (!isDrawing) return;
+
+        if (currentTool === 'freehand') {
+            setCurrentLine([...currentLine, pos.x, pos.y]);
+        } else {
+            setCurrentLine([currentLine[0], currentLine[1], pos.x, pos.y]);
         }
     };
 
     const handleMouseUp = () => {
+        // Handle selection rectangle completion
+        if (isSelectingRect && selectionRect) {
+            setIsSelectingRect(false);
+            const { x1, y1, x2, y2 } = selectionRect;
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+
+            // Find objects within rectangle
+            const selectedIds = Object.values(currentFrame.objects)
+                .filter(obj => obj.x >= minX && obj.x <= maxX && obj.y >= minY && obj.y <= maxY)
+                .map(obj => obj.id);
+
+            if (selectedIds.length > 0) {
+                selectMultipleObjects(selectedIds);
+                toast.success(`Selected ${selectedIds.length} object(s)`);
+            }
+            setSelectionRect(null);
+            return;
+        }
+
         if (!isDrawing) return;
         setIsDrawing(false);
         if (currentLine.length > 0) {
@@ -635,76 +757,18 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-                },
-                exportVideo: async () => {
-                    const stage = stageRef.current;
-                    if (!stage) return;
-
-                    // Note: Video export might need to handle scale or temporarily reset it
-                    // For now, let's capture what's visible or reset?
-                    // Resetting scale for video might be jarring if user is watching
-                    // But for quality, 1x is better.
-                    // Let's try to capture at 1x
-
-                    const oldScale = stage.scale();
-                    const oldSize = stage.size();
-
-                    stage.scale({ x: 1, y: 1 });
-                    stage.size({ width: WIDTH, height: HEIGHT });
-
-                    const canvas = stage.content.querySelector('canvas');
-                    if (!canvas) return;
-
-                    const stream = canvas.captureStream(30);
-                    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-                    const chunks: Blob[] = [];
-
-                    mediaRecorder.ondataavailable = (e) => {
-                        if (e.data.size > 0) chunks.push(e.data);
-                    };
-
-                    mediaRecorder.onstop = () => {
-                        const blob = new Blob(chunks, { type: 'video/webm' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = 'playchalk-animation.webm';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
-                        toast.success('Video exported successfully');
-
-                        // Restore scale
-                        stage.scale(oldScale);
-                        stage.size(oldSize);
-                    };
-
-                    // Start recording and playback
-                    mediaRecorder.start();
-
-                    // Reset to start
-                    usePlayStore.getState().setCurrentFrame(0);
-                    usePlayStore.getState().togglePlay(); // Start playing
-
-                    // Calculate duration
-                    const totalDuration = frames.reduce((acc, f) => acc + (f.duration || 500), 0);
-
-                    // Stop after duration
-                    setTimeout(() => {
-                        mediaRecorder.stop();
-                        usePlayStore.getState().togglePlay(); // Stop playing
-                    }, totalDuration + 100); // Add buffer
-
-                    toast.success('Recording started... please wait');
                 }
             });
         }
     }, [onRegisterExport, currentFrameIndex, frames, scale]); // Added scale dependency
 
-    const handleObjectClick = (objId: string) => {
+    const handleObjectClick = (objId: string, shiftKey: boolean) => {
         if (currentTool !== 'select') return;
-        setSelectedObject(objId);
+        if (shiftKey) {
+            toggleObjectSelection(objId);
+        } else {
+            setSelectedObject(objId);
+        }
     };
 
     const handleLabelEdit = (objId: string, currentLabel?: string) => {
@@ -739,9 +803,26 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                         </div>
                     )}
 
+                    {/* Arena Background - Only visible in 3D mode */}
                     <div
-                        className="shadow-2xl rounded-xl overflow-hidden border-[4px] md:border-[10px] border-[#5c2b0c] bg-[#d4a373] relative z-0 transition-all duration-300"
-                        style={{ width: stageSize.width + (window.innerWidth < 768 ? 8 : 20), height: stageSize.height + (window.innerWidth < 768 ? 8 : 20) }}
+                        className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${viewMode === '3d' ? 'opacity-100' : 'opacity-0'}`}
+                        style={{
+                            background: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%)',
+                            zIndex: -1
+                        }}
+                    />
+
+                    <div
+                        className={`shadow-2xl rounded-xl overflow-hidden border-[4px] md:border-[10px] border-[#5c2b0c] bg-[#d4a373] relative z-0 transition-all duration-700 ease-in-out ${viewMode === '3d' ? 'scale-75' : ''}`}
+                        style={{
+                            width: stageSize.width + (window.innerWidth < 768 ? 8 : 20),
+                            height: stageSize.height + (window.innerWidth < 768 ? 8 : 20),
+                            transform: viewMode === '3d'
+                                ? `perspective(1500px) rotateX(${cameraPitch}deg) rotateZ(${cameraRotation}deg) translateY(-20px)`
+                                : 'none',
+                            transformStyle: 'preserve-3d',
+                            boxShadow: viewMode === '3d' ? '0 50px 100px -20px rgba(0,0,0,0.7)' : undefined
+                        }}
                     >
                         <Stage
                             width={stageSize.width}
@@ -754,6 +835,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                         >
                             <Layer>
                                 <CourtBackground type={courtType} />
+
                                 {currentFrame && currentFrame.annotations.map((ann) => (
                                     ann.type === 'arrow' ? (
                                         <Arrow
@@ -923,7 +1005,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                             </Layer>
                             <Layer>
                                 {currentFrame && Object.values(currentFrame.objects).map((obj) => {
-                                    const isSelected = selectedObjectId === obj.id;
+                                    const isSelected = selectedObjectIds.includes(obj.id);
 
                                     // Calculate position - if ball is attached, use player's position + offset
                                     const displayX = obj.x;
@@ -943,26 +1025,40 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                                 updateObjectRotation(obj.id, rotation);
                                                 if (width) updateObjectSize(obj.id, width, 40);
                                             }}
-                                            onClick={() => handleObjectClick(obj.id)}
+                                            onClick={(e) => handleObjectClick(obj.id, e.evt.shiftKey)}
                                             onDblClick={() => handleLabelEdit(obj.id, obj.label)}
                                             setNodeRef={(node) => { if (node) nodeRefs.current[obj.id] = node; }}
+                                            viewMode={viewMode}
                                         />
                                     );
                                 })}
                             </Layer>
                             <Layer>
-                                {selectedObjectId && currentFrame?.objects[selectedObjectId]?.type === 'screen' && (
+                                {selectedObjectIds.length > 0 && selectedObjectIds.some(id => currentFrame?.objects[id]?.type === 'screen') && (
                                     <Transformer
                                         ref={transformerRef}
+                                        rotateEnabled={true}
+                                        enabledAnchors={['middle-left', 'middle-right']}
                                         boundBoxFunc={(oldBox, newBox) => {
-                                            // Limit minimum size
-                                            if (newBox.width < 20 || newBox.height < 20) {
+                                            if (newBox.width < 20) {
                                                 return oldBox;
                                             }
                                             return newBox;
                                         }}
-                                        enabledAnchors={['middle-left', 'middle-right']}
-                                        rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+                                    />
+                                )}
+
+                                {/* Selection Rectangle */}
+                                {selectionRect && (
+                                    <Rect
+                                        x={Math.min(selectionRect.x1, selectionRect.x2)}
+                                        y={Math.min(selectionRect.y1, selectionRect.y2)}
+                                        width={Math.abs(selectionRect.x2 - selectionRect.x1)}
+                                        height={Math.abs(selectionRect.y2 - selectionRect.y1)}
+                                        stroke="#3b82f6"
+                                        strokeWidth={2}
+                                        dash={[10, 5]}
+                                        fill="rgba(59, 130, 246, 0.1)"
                                     />
                                 )}
                             </Layer>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Edit2, Check, Undo2, Redo2, Download, Video } from 'lucide-react';
+import { Trash2, Edit2, Check, Undo2, Redo2, Download } from 'lucide-react';
 import { usePlayStore } from '../store/usePlayStore';
 import { PlaysManager } from './PlaysManager';
 import toast from 'react-hot-toast';
@@ -7,10 +7,9 @@ import { motion } from 'framer-motion';
 
 interface HeaderProps {
     onExportImage?: () => void;
-    onExportVideo?: () => void;
 }
 
-export const Header = ({ onExportImage, onExportVideo }: HeaderProps) => {
+export const Header = ({ onExportImage }: HeaderProps) => {
     const {
         playName,
         setPlayName,
@@ -19,9 +18,9 @@ export const Header = ({ onExportImage, onExportVideo }: HeaderProps) => {
         history,
         undo,
         redo,
-        selectedObjectId,
-        deleteObject,
-        setSelectedObject
+        selectedObjectIds,
+        deleteSelectedObjects,
+        clearSelection
     } = usePlayStore();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -51,10 +50,9 @@ export const Header = ({ onExportImage, onExportVideo }: HeaderProps) => {
     };
 
     const handleDeleteSelected = () => {
-        if (selectedObjectId) {
-            deleteObject(selectedObjectId);
-            setSelectedObject(null);
-            toast.success('Object deleted');
+        if (selectedObjectIds && selectedObjectIds.length > 0) {
+            deleteSelectedObjects();
+            toast.success(`Deleted ${selectedObjectIds.length} object(s)`);
         }
     };
 
@@ -125,7 +123,7 @@ export const Header = ({ onExportImage, onExportVideo }: HeaderProps) => {
             {/* Right: Actions */}
             <div className="flex items-center gap-3">
                 {/* Context Actions */}
-                {selectedObjectId && (
+                {selectedObjectIds && selectedObjectIds.length > 0 && (
                     <motion.button
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -145,17 +143,6 @@ export const Header = ({ onExportImage, onExportVideo }: HeaderProps) => {
                     >
                         <Download size={16} />
                         <span className="hidden xl:inline">Image</span>
-                    </button>
-                )}
-
-                {onExportVideo && (
-                    <button
-                        onClick={onExportVideo}
-                        className="glass-button px-3 py-2 rounded-xl text-gray-300 hover:text-white flex items-center gap-2 text-sm font-semibold"
-                        title="Export as Video"
-                    >
-                        <Video size={16} />
-                        <span className="hidden xl:inline">Video</span>
                     </button>
                 )}
 

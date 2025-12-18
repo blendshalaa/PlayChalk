@@ -3,12 +3,18 @@ import { persist } from 'zustand/middleware';
 import type { PlayState, Frame, SavedPlay, PlayObject } from '../types';
 import { formationPresets } from '../data/presets';
 
+// Extend PlayState interface locally if not updated in types.ts yet, or assume it will be updated.
+// Actually, I should update types.ts first to be safe, but I can't see it right now.
+// Let's check types.ts first.
+
+
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const createInitialFrame = (): Frame => ({
     id: generateId(),
     objects: {},
     annotations: [],
+    shapes: [],
     textAnnotations: [],
     duration: 500,
 });
@@ -22,22 +28,36 @@ export const usePlayStore = create<PlayState>()(
             playbackSpeed: 500,
             currentTool: 'select',
             playName: 'Untitled Play',
-            selectedObjectId: null,
+            selectedObjectIds: [],
             annotationColor: '#ffffff',
             annotationStrokeWidth: 2,
+            shapeFillOpacity: 0.3,
             textFontSize: 16,
             history: [],
             historyIndex: -1,
             savedPlays: [],
             currentPlayId: null,
+            currentPlayCategory: 'Other',
+            currentPlayTags: [],
+            availableTags: ['Pick and Roll', 'Zone Offense', 'Man Defense', 'Fast Break', 'Inbound', 'Press Break'],
+            frameThumbnails: {},
             showWelcome: true,
             isLooping: false,
             courtType: 'full',
             rosters: [],
             copiedObject: null,
             showShortcuts: false,
+            autoSaveEnabled: true,
+            lastAutoSave: 0,
+            viewMode: '2d',
+            cameraRotation: 0,
+            cameraPitch: 60,
 
-            setShowWelcome: (show) => set({ showWelcome: show }),
+            setShowWelcome: (show: boolean) => set({ showWelcome: show }),
+            setViewMode: (mode: '2d' | '3d') => set({ viewMode: mode }),
+            setCameraRotation: (rotation: number) => set({ cameraRotation: rotation }),
+            setCameraPitch: (pitch: number) => set({ cameraPitch: pitch }),
+            setFrames: (frames: Frame[]) => set({ frames }),
 
             saveHistory: () => {
                 const state = get();
@@ -81,6 +101,8 @@ export const usePlayStore = create<PlayState>()(
                     id: state.currentPlayId || generateId(),
                     name: state.playName,
                     frames: JSON.parse(JSON.stringify(state.frames)),
+                    category: state.currentPlayCategory,
+                    tags: state.currentPlayTags,
                     createdAt: state.currentPlayId
                         ? state.savedPlays.find(p => p.id === state.currentPlayId)?.createdAt || now
                         : now,
@@ -111,8 +133,10 @@ export const usePlayStore = create<PlayState>()(
                         currentFrameIndex: 0,
                         playName: play.name,
                         currentPlayId: play.id,
+                        currentPlayCategory: play.category,
+                        currentPlayTags: play.tags,
                         isPlaying: false,
-                        selectedObjectId: null,
+                        selectedObjectIds: [],
                         history: [],
                         historyIndex: -1,
                     });
@@ -133,8 +157,10 @@ export const usePlayStore = create<PlayState>()(
                     currentFrameIndex: 0,
                     playName: 'Untitled Play',
                     currentPlayId: null,
+                    currentPlayCategory: 'Other',
+                    currentPlayTags: [],
                     isPlaying: false,
-                    selectedObjectId: null,
+                    selectedObjectIds: [],
                     history: [],
                     historyIndex: -1,
                 });
@@ -142,9 +168,10 @@ export const usePlayStore = create<PlayState>()(
 
             setTool: (tool) => set({ currentTool: tool }),
             setPlayName: (name) => set({ playName: name }),
-            setSelectedObject: (objectId) => set({ selectedObjectId: objectId }),
+            setSelectedObject: (objectId) => set({ selectedObjectIds: objectId ? [objectId] : [] }),
             setAnnotationColor: (color) => set({ annotationColor: color }),
             setAnnotationStrokeWidth: (width) => set({ annotationStrokeWidth: width }),
+            setShapeFillOpacity: (opacity) => set({ shapeFillOpacity: opacity }),
             setTextFontSize: (size) => set({ textFontSize: size }),
 
             setFrameDuration: (index, duration) => {
@@ -165,6 +192,7 @@ export const usePlayStore = create<PlayState>()(
                         id: generateId(),
                         objects: JSON.parse(JSON.stringify(currentFrame.objects)),
                         annotations: [],
+                        shapes: [],
                         textAnnotations: [],
                         duration: 500,
                     };
@@ -215,7 +243,8 @@ export const usePlayStore = create<PlayState>()(
             updateObjectPosition: (frameIndex, objectId, x, y) => {
                 set((state) => {
                     const newFrames = state.frames.map((frame, index) => {
-                        if (index === frameIndex && frame.objects[objectId]) {
+                        // Update current frame and all subsequent frames
+                        if (index >= frameIndex && frame.objects[objectId]) {
                             return {
                                 ...frame,
                                 objects: {
@@ -346,7 +375,7 @@ export const usePlayStore = create<PlayState>()(
                     });
                     return {
                         frames: newFrames,
-                        selectedObjectId: state.selectedObjectId === objectId ? null : state.selectedObjectId,
+                        selectedObjectIds: state.selectedObjectIds.filter(id => id !== objectId),
                     };
                 });
                 get().saveHistory();
@@ -429,7 +458,7 @@ export const usePlayStore = create<PlayState>()(
                     frames: [createInitialFrame()],
                     currentFrameIndex: 0,
                     isPlaying: false,
-                    selectedObjectId: null,
+                    selectedObjectIds: [],
                 });
                 get().saveHistory();
             },
@@ -524,7 +553,235 @@ export const usePlayStore = create<PlayState>()(
                         y: state.copiedObject.y + 30,
                     };
                     get().addObject(newObject);
-                    set({ selectedObjectId: newObject.id });
+                    set({ selectedObjectIds: [newObject.id] });
+                }
+            },
+
+            // Multi-select Actions
+            selectMultipleObjects: (objectIds) => set({ selectedObjectIds: objectIds }),
+
+            toggleObjectSelection: (objectId) => {
+                const state = get();
+                const isSelected = state.selectedObjectIds.includes(objectId);
+                if (isSelected) {
+                    set({ selectedObjectIds: state.selectedObjectIds.filter(id => id !== objectId) });
+                } else {
+                    set({ selectedObjectIds: [...state.selectedObjectIds, objectId] });
+                }
+            },
+
+            clearSelection: () => set({ selectedObjectIds: [] }),
+
+            selectAllObjects: () => {
+                const state = get();
+                const currentFrame = state.frames[state.currentFrameIndex];
+                if (currentFrame) {
+                    const allObjectIds = Object.keys(currentFrame.objects);
+                    set({ selectedObjectIds: allObjectIds });
+                }
+            },
+
+            deleteSelectedObjects: () => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame) => {
+                        const newObjects = { ...frame.objects };
+                        state.selectedObjectIds.forEach(id => {
+                            delete newObjects[id];
+                        });
+                        return {
+                            ...frame,
+                            objects: newObjects,
+                        };
+                    });
+                    return {
+                        frames: newFrames,
+                        selectedObjectIds: [],
+                    };
+                });
+                get().saveHistory();
+            },
+
+            alignObjects: (alignment) => {
+                const state = get();
+                const currentFrame = state.frames[state.currentFrameIndex];
+                if (!currentFrame || state.selectedObjectIds.length < 2) return;
+
+                const selectedObjects = state.selectedObjectIds
+                    .map(id => currentFrame.objects[id])
+                    .filter(Boolean);
+
+                if (selectedObjects.length < 2) return;
+
+                let targetValue: number;
+
+                switch (alignment) {
+                    case 'left':
+                        targetValue = Math.min(...selectedObjects.map(obj => obj.x));
+                        selectedObjects.forEach(obj => {
+                            get().updateObjectPosition(state.currentFrameIndex, obj.id, targetValue, obj.y);
+                        });
+                        break;
+                    case 'right':
+                        targetValue = Math.max(...selectedObjects.map(obj => obj.x));
+                        selectedObjects.forEach(obj => {
+                            get().updateObjectPosition(state.currentFrameIndex, obj.id, targetValue, obj.y);
+                        });
+                        break;
+                    case 'top':
+                        targetValue = Math.min(...selectedObjects.map(obj => obj.y));
+                        selectedObjects.forEach(obj => {
+                            get().updateObjectPosition(state.currentFrameIndex, obj.id, obj.x, targetValue);
+                        });
+                        break;
+                    case 'bottom':
+                        targetValue = Math.max(...selectedObjects.map(obj => obj.y));
+                        selectedObjects.forEach(obj => {
+                            get().updateObjectPosition(state.currentFrameIndex, obj.id, obj.x, targetValue);
+                        });
+                        break;
+                    case 'center-h':
+                        const avgX = selectedObjects.reduce((sum, obj) => sum + obj.x, 0) / selectedObjects.length;
+                        selectedObjects.forEach(obj => {
+                            get().updateObjectPosition(state.currentFrameIndex, obj.id, avgX, obj.y);
+                        });
+                        break;
+                    case 'center-v':
+                        const avgY = selectedObjects.reduce((sum, obj) => sum + obj.y, 0) / selectedObjects.length;
+                        selectedObjects.forEach(obj => {
+                            get().updateObjectPosition(state.currentFrameIndex, obj.id, obj.x, avgY);
+                        });
+                        break;
+                }
+            },
+
+            distributeObjects: (direction) => {
+                const state = get();
+                const currentFrame = state.frames[state.currentFrameIndex];
+                if (!currentFrame || state.selectedObjectIds.length < 3) return;
+
+                const selectedObjects = state.selectedObjectIds
+                    .map(id => currentFrame.objects[id])
+                    .filter(Boolean);
+
+                if (selectedObjects.length < 3) return;
+
+                if (direction === 'horizontal') {
+                    const sorted = [...selectedObjects].sort((a, b) => a.x - b.x);
+                    const minX = sorted[0].x;
+                    const maxX = sorted[sorted.length - 1].x;
+                    const spacing = (maxX - minX) / (sorted.length - 1);
+
+                    sorted.forEach((obj, index) => {
+                        const newX = minX + (spacing * index);
+                        get().updateObjectPosition(state.currentFrameIndex, obj.id, newX, obj.y);
+                    });
+                } else {
+                    const sorted = [...selectedObjects].sort((a, b) => a.y - b.y);
+                    const minY = sorted[0].y;
+                    const maxY = sorted[sorted.length - 1].y;
+                    const spacing = (maxY - minY) / (sorted.length - 1);
+
+                    sorted.forEach((obj, index) => {
+                        const newY = minY + (spacing * index);
+                        get().updateObjectPosition(state.currentFrameIndex, obj.id, obj.x, newY);
+                    });
+                }
+            },
+
+            // Shape Actions
+            addShape: (shape) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === state.currentFrameIndex) {
+                            return {
+                                ...frame,
+                                shapes: [...frame.shapes, shape],
+                            };
+                        }
+                        return frame;
+                    });
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
+
+            deleteShape: (shapeId) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === state.currentFrameIndex) {
+                            return {
+                                ...frame,
+                                shapes: frame.shapes.filter(s => s.id !== shapeId),
+                            };
+                        }
+                        return frame;
+                    });
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
+
+            updateShapeProperties: (shapeId, props) => {
+                set((state) => {
+                    const newFrames = state.frames.map((frame, index) => {
+                        if (index === state.currentFrameIndex) {
+                            return {
+                                ...frame,
+                                shapes: frame.shapes.map(s =>
+                                    s.id === shapeId ? { ...s, ...props } : s
+                                ),
+                            };
+                        }
+                        return frame;
+                    });
+                    return { frames: newFrames };
+                });
+                get().saveHistory();
+            },
+
+            // Tag & Category Actions
+            setPlayCategory: (category) => set({ currentPlayCategory: category }),
+
+            setPlayTags: (tags) => set({ currentPlayTags: tags }),
+
+            addCustomTag: (tag) => {
+                const state = get();
+                if (!state.availableTags.includes(tag)) {
+                    set({ availableTags: [...state.availableTags, tag] });
+                }
+            },
+
+            updatePlayMetadata: (playId, category, tags) => {
+                set((state) => {
+                    const newSavedPlays = state.savedPlays.map(play =>
+                        play.id === playId
+                            ? { ...play, category, tags, updatedAt: Date.now() }
+                            : play
+                    );
+                    return { savedPlays: newSavedPlays };
+                });
+            },
+
+            // Thumbnail Actions
+            setFrameThumbnail: (frameId, dataUrl) => {
+                set((state) => ({
+                    frameThumbnails: {
+                        ...state.frameThumbnails,
+                        [frameId]: dataUrl,
+                    },
+                }));
+            },
+
+            clearThumbnailCache: () => set({ frameThumbnails: {} }),
+
+            // Auto-save Actions
+            setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
+
+            triggerAutoSave: () => {
+                const state = get();
+                if (state.autoSaveEnabled && state.currentPlayId) {
+                    get().savePlay();
+                    set({ lastAutoSave: Date.now() });
                 }
             },
 
@@ -532,18 +789,52 @@ export const usePlayStore = create<PlayState>()(
         }),
         {
             name: 'playchalk-storage',
+            version: 1,
+            migrate: (persistedState: any, version: number) => {
+                // Migrate from old state format
+                if (version === 0 || !persistedState.selectedObjectIds) {
+                    return {
+                        ...persistedState,
+                        selectedObjectIds: [],
+                        shapeFillOpacity: persistedState.shapeFillOpacity ?? 0.3,
+                        currentPlayCategory: persistedState.currentPlayCategory ?? 'Other',
+                        currentPlayTags: persistedState.currentPlayTags ?? [],
+                        availableTags: persistedState.availableTags ?? ['Pick and Roll', 'Zone Offense', 'Man Defense', 'Fast Break', 'Inbound', 'Press Break'],
+                        frameThumbnails: {},
+                        autoSaveEnabled: persistedState.autoSaveEnabled ?? true,
+                        lastAutoSave: 0,
+                        // Migrate frames to include shapes array
+                        frames: persistedState.frames?.map((frame: any) => ({
+                            ...frame,
+                            shapes: frame.shapes ?? []
+                        })) ?? [createInitialFrame()],
+                        // Migrate saved plays to include category and tags
+                        savedPlays: persistedState.savedPlays?.map((play: any) => ({
+                            ...play,
+                            category: play.category ?? 'Other',
+                            tags: play.tags ?? []
+                        })) ?? []
+                    };
+                }
+                return persistedState;
+            },
             partialize: (state) => ({
                 frames: state.frames,
                 currentFrameIndex: state.currentFrameIndex,
                 playName: state.playName,
                 annotationColor: state.annotationColor,
                 annotationStrokeWidth: state.annotationStrokeWidth,
+                shapeFillOpacity: state.shapeFillOpacity,
                 textFontSize: state.textFontSize,
                 savedPlays: state.savedPlays,
                 currentPlayId: state.currentPlayId,
+                currentPlayCategory: state.currentPlayCategory,
+                currentPlayTags: state.currentPlayTags,
+                availableTags: state.availableTags,
                 showWelcome: state.showWelcome,
                 courtType: state.courtType,
                 rosters: state.rosters,
+                autoSaveEnabled: state.autoSaveEnabled,
             }),
         }
     )
