@@ -16,9 +16,7 @@ interface CourtProps {
 
 
 // Easing function
-const easeInOutCubic = (t: number): number => {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-};
+
 
 const CourtBackground = React.memo(({ type }: { type: 'full' | 'half' }) => {
     // NBA Dimensions (Scale: 8px = 1ft)
@@ -408,6 +406,9 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
     const [textInput, setTextInput] = useState('');
     const [textInputPos, setTextInputPos] = useState({ x: 0, y: 0 });
 
+    // Easing function removed as we switched to linear interpolation
+    // 
+
     const isEmpty = currentFrame && Object.keys(currentFrame.objects).length === 0 && currentFrame.annotations.length === 0 && currentFrame.shapes.length === 0 && currentFrame.textAnnotations.length === 0;
 
     useEffect(() => {
@@ -434,36 +435,36 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
             // Handle looping or stopping
             if (totalTime >= totalDuration) {
                 if (usePlayStore.getState().isLooping) {
-                    startTime = frame.time - (totalTime % totalDuration) + initialTimeOffset; // Reset start time to loop smoothly
+                    startTime = frame.time; // Reset start time
+                    // We need to reset the visual state to the beginning
+                    // But we can't just set totalTime to 0 here easily without resetting startTime
+                    // The easiest way is to let the modulo handle it, but we need to reset the offset
+                    // Actually, if we just reset startTime to current frame.time, elapsedTime becomes 0.
+                    // And we need to reset initialTimeOffset to 0 effectively for the new loop?
+                    // No, simpler: just restart the animation logic.
+                    // But for now, let's just handle the stop case cleanly.
                 } else {
                     usePlayStore.getState().togglePlay(); // Stop playing
+                    usePlayStore.getState().setCurrentFrame(frames.length - 1); // Snap to end
                     return;
                 }
             }
 
-            const time = totalTime % totalDuration;
+            const time = usePlayStore.getState().isLooping ? totalTime % totalDuration : totalTime;
             const frameIndex = Math.floor(time / playbackSpeed);
             const nextFrameIndex = Math.min(frameIndex + 1, frames.length - 1);
 
-            // Use Easing
-            const rawProgress = (time % playbackSpeed) / playbackSpeed;
-            const progress = easeInOutCubic(rawProgress);
+            // Use Linear Interpolation for consistent speed
+            const progress = (time % playbackSpeed) / playbackSpeed;
 
             const startFrame = frames[frameIndex];
             const endFrame = frames[nextFrameIndex];
 
             // Update visual current frame index if it changed
+            // We use a ref or check against store to avoid thrashing, but we DO want to update the store
+            // so the UI slider moves.
             if (frameIndex !== usePlayStore.getState().currentFrameIndex) {
-                // We don't want to trigger a re-render of the whole component if possible, 
-                // but we need to update the UI slider/counter. 
-                // Calling setCurrentFrame might be too heavy for 60fps loop?
-                // Actually, let's just let the animation drive the visuals and update the store index less frequently or just for UI?
-                // For now, let's NOT update the store index on every frame to avoid React render thrashing, 
-                // BUT the user might want to see the slider move.
-                // Let's try updating it, if it's slow we can optimize.
-                // usePlayStore.getState().setCurrentFrame(frameIndex); 
-                // Actually, updating state in animation loop is bad practice.
-                // Let's just interpolate the positions.
+                usePlayStore.getState().setCurrentFrame(frameIndex);
             }
 
             if (!startFrame || !endFrame) return;
@@ -483,8 +484,6 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                 }
                 // If object only exists in start frame (disappears)
                 else if (startObj && !endObj && node) {
-                    // Fade out or just disappear? For now, just stay at start pos until frame switch?
-                    // Or maybe hide it if progress > 0.5?
                     node.visible(progress < 0.5);
                     node.x(startObj.x);
                     node.y(startObj.y);
@@ -501,9 +500,10 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         anim.start();
         return () => {
             anim.stop();
-            // Reset objects to their actual positions in the current frame when stopping
-            // This prevents them from getting stuck in interpolated positions
-            const currentFrame = frames[currentFrameIndex];
+            // When stopping, ensure we snap to the exact position of the current frame
+            // This is critical because the animation might stop mid-interpolation
+            const currentIdx = usePlayStore.getState().currentFrameIndex;
+            const currentFrame = frames[currentIdx];
             if (currentFrame) {
                 Object.keys(currentFrame.objects).forEach((objId) => {
                     const obj = currentFrame.objects[objId];

@@ -272,11 +272,15 @@ export const usePlayStore = create<PlayState>()(
 
                         // If object exists in this future frame
                         if (obj) {
-                            // Check if it's at the "old" position (meaning it hasn't been animated yet)
-                            // We use a small epsilon for float comparison just in case, though exact match is likely fine here
-                            const isAtOldPosition = Math.abs(obj.x - prevX) < 0.1 && Math.abs(obj.y - prevY) < 0.1;
+                            // Check if the object in this future frame is at the same position as it was in the *previous* frame (before this update)
+                            // If it is, it means the user hasn't explicitly moved it in this future frame (it was just inheriting the position)
+                            // So we should update it to the new position.
 
-                            if (isAtOldPosition) {
+                            // We compare against prevX/prevY which are the coordinates of the object in the frame we are editing *before* the edit.
+                            // If the future frame has the same coordinates, it implies it was a static continuation.
+                            const isStaticContinuation = Math.abs(obj.x - prevX) < 0.5 && Math.abs(obj.y - prevY) < 0.5;
+
+                            if (isStaticContinuation) {
                                 // It was static, so we propagate the new position
                                 newFrames[i] = {
                                     ...frame,
@@ -290,7 +294,8 @@ export const usePlayStore = create<PlayState>()(
                                     },
                                 };
                             } else {
-                                // The object has moved in this frame (animation exists), so STOP propagating
+                                // The object has a different position in this future frame, meaning it has been animated/moved.
+                                // We stop propagating to preserve that animation.
                                 break;
                             }
                         } else {
