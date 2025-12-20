@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Circle as KonvaCircle, Line, Rect, RegularPolygon, Text as KonvaText } from 'react-konva';
+import { Group, Circle as KonvaCircle, Line, Text as KonvaText } from 'react-konva';
 import Konva from 'konva';
 import type { PlayObject } from '../types';
 
@@ -82,19 +82,12 @@ export const CourtObject = React.memo(({
             // ... existing event handlers ...
             onTransformEnd={(e) => {
                 const node = e.target;
-                const scaleX = node.scaleX();
 
                 // Reset scale
                 node.scaleX(1);
                 node.scaleY(1);
 
-                let newWidth;
-                if (obj.type === 'screen') {
-                    const currentWidth = obj.width || 40;
-                    newWidth = Math.max(20, currentWidth * scaleX);
-                }
-
-                onTransformEnd(node.rotation(), newWidth);
+                onTransformEnd(node.rotation());
             }}
             onClick={onClick}
             onDblClick={onDblClick}
@@ -304,170 +297,7 @@ export const CourtObject = React.memo(({
                 </>
             )}
 
-            {obj.type === 'screen' && (
-                <>
-                    {/* Invisible rect for hitting and sizing */}
-                    <Rect
-                        x={-(obj.width || 40) / 2}
-                        y={-25}
-                        width={obj.width || 40}
-                        height={50}
-                        fill="transparent"
-                    />
 
-                    {/* Player body (torso) */}
-                    <Rect
-                        x={-8}
-                        y={-20}
-                        width={16}
-                        height={28}
-                        cornerRadius={4}
-                        fillLinearGradientStartPoint={{ x: 0, y: -20 }}
-                        fillLinearGradientEndPoint={{ x: 0, y: 8 }}
-                        fillLinearGradientColorStops={[
-                            0, obj.color || '#9333ea',
-                            0.5, obj.color ? `${obj.color}dd` : '#7c3aed',
-                            1, obj.color ? `${obj.color}aa` : '#6d28d9'
-                        ]}
-                        stroke={obj.color || '#9333ea'}
-                        strokeWidth={2}
-                        shadowColor="rgba(0, 0, 0, 0.6)"
-                        shadowBlur={12}
-                        shadowOffset={{ x: 2, y: 3 }}
-                        shadowOpacity={0.7}
-                    />
-
-                    {/* Head */}
-                    <KonvaCircle
-                        y={-28}
-                        radius={6}
-                        fillRadialGradientStartPoint={{ x: -2, y: -2 }}
-                        fillRadialGradientEndPoint={{ x: 0, y: 0 }}
-                        fillRadialGradientStartRadius={0}
-                        fillRadialGradientEndRadius={6}
-                        fillRadialGradientColorStops={[
-                            0, 'rgba(255, 255, 255, 0.3)',
-                            0.4, obj.color || '#9333ea',
-                            1, obj.color ? `${obj.color}cc` : '#7c3aed'
-                        ]}
-                        stroke={obj.color || '#9333ea'}
-                        strokeWidth={2}
-                        shadowColor="rgba(0, 0, 0, 0.5)"
-                        shadowBlur={8}
-                        shadowOffset={{ x: 1, y: 2 }}
-                    />
-
-                    {/* Left arm extended */}
-                    <Line
-                        points={[-(obj.width || 40) / 2 + 8, -12, -8, -8]}
-                        stroke={obj.color || '#9333ea'}
-                        strokeWidth={5}
-                        lineCap="round"
-                        lineJoin="round"
-                        shadowColor="rgba(0, 0, 0, 0.5)"
-                        shadowBlur={8}
-                        shadowOffset={{ x: 1, y: 2 }}
-                    />
-
-                    {/* Right arm extended */}
-                    <Line
-                        points={[8, -8, (obj.width || 40) / 2 - 8, -12]}
-                        stroke={obj.color || '#9333ea'}
-                        strokeWidth={5}
-                        lineCap="round"
-                        lineJoin="round"
-                        shadowColor="rgba(0, 0, 0, 0.5)"
-                        shadowBlur={8}
-                        shadowOffset={{ x: 1, y: 2 }}
-                    />
-
-                    {/* Left hand */}
-                    <KonvaCircle
-                        x={-(obj.width || 40) / 2 + 8}
-                        y={-12}
-                        radius={4}
-                        fill={obj.color || '#9333ea'}
-                        stroke={obj.color ? `${obj.color}dd` : '#7c3aed'}
-                        strokeWidth={1}
-                    />
-
-                    {/* Right hand */}
-                    <KonvaCircle
-                        x={(obj.width || 40) / 2 - 8}
-                        y={-12}
-                        radius={4}
-                        fill={obj.color || '#9333ea'}
-                        stroke={obj.color ? `${obj.color}dd` : '#7c3aed'}
-                        strokeWidth={1}
-                    />
-
-                    {/* Legs */}
-                    <Line
-                        points={[-4, 8, -6, 18]}
-                        stroke={obj.color || '#9333ea'}
-                        strokeWidth={4}
-                        lineCap="round"
-                        shadowColor="rgba(0, 0, 0, 0.4)"
-                        shadowBlur={6}
-                        shadowOffset={{ x: 1, y: 2 }}
-                    />
-                    <Line
-                        points={[4, 8, 6, 18]}
-                        stroke={obj.color || '#9333ea'}
-                        strokeWidth={4}
-                        lineCap="round"
-                        shadowColor="rgba(0, 0, 0, 0.4)"
-                        shadowBlur={6}
-                        shadowOffset={{ x: 1, y: 2 }}
-                    />
-
-                    {/* Highlight on torso for 3D effect */}
-                    <Line
-                        points={[-6, -18, -6, 6]}
-                        stroke="rgba(255, 255, 255, 0.3)"
-                        strokeWidth={2}
-                        lineCap="round"
-                    />
-
-                    {/* Highlight on head */}
-                    <KonvaCircle
-                        x={-2}
-                        y={-30}
-                        radius={2}
-                        fill="rgba(255, 255, 255, 0.5)"
-                    />
-                </>
-            )}
-
-            {obj.type === 'cone' && (
-                <>
-                    {/* Cone with 3D gradient */}
-                    <RegularPolygon
-                        sides={3}
-                        radius={14}
-                        fillLinearGradientStartPoint={{ x: 0, y: -14 }}
-                        fillLinearGradientEndPoint={{ x: 0, y: 14 }}
-                        fillLinearGradientColorStops={[
-                            0, '#ff9d5c',
-                            0.5, obj.color || '#f97316',
-                            1, '#c2410c'
-                        ]}
-                        stroke="rgba(0, 0, 0, 0.3)"
-                        strokeWidth={2}
-                        shadowColor="rgba(0, 0, 0, 0.5)"
-                        shadowBlur={10}
-                        shadowOffset={{ x: 2, y: 2 }}
-                        shadowOpacity={0.5}
-                    />
-                    {/* Highlight stripe */}
-                    <Line
-                        points={[-5, 0, 5, 0]}
-                        stroke="rgba(255, 255, 255, 0.4)"
-                        strokeWidth={2}
-                        lineCap="round"
-                    />
-                </>
-            )}
         </Group>
     );
 });

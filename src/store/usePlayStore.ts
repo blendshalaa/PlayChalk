@@ -242,23 +242,63 @@ export const usePlayStore = create<PlayState>()(
 
             updateObjectPosition: (frameIndex, objectId, x, y) => {
                 set((state) => {
-                    const newFrames = state.frames.map((frame, index) => {
-                        // Update current frame and all subsequent frames
-                        if (index >= frameIndex && frame.objects[objectId]) {
-                            return {
-                                ...frame,
-                                objects: {
-                                    ...frame.objects,
-                                    [objectId]: {
-                                        ...frame.objects[objectId],
-                                        x,
-                                        y,
+                    const newFrames = [...state.frames];
+                    const currentFrame = newFrames[frameIndex];
+
+                    // Get the object's previous position in the current frame
+                    const prevObj = currentFrame.objects[objectId];
+                    if (!prevObj) return state; // Object doesn't exist in this frame
+
+                    const prevX = prevObj.x;
+                    const prevY = prevObj.y;
+
+                    // Update the current frame
+                    newFrames[frameIndex] = {
+                        ...currentFrame,
+                        objects: {
+                            ...currentFrame.objects,
+                            [objectId]: {
+                                ...prevObj,
+                                x,
+                                y,
+                            },
+                        },
+                    };
+
+                    // Smart Propagation: Update subsequent frames ONLY if the object hasn't moved
+                    for (let i = frameIndex + 1; i < newFrames.length; i++) {
+                        const frame = newFrames[i];
+                        const obj = frame.objects[objectId];
+
+                        // If object exists in this future frame
+                        if (obj) {
+                            // Check if it's at the "old" position (meaning it hasn't been animated yet)
+                            // We use a small epsilon for float comparison just in case, though exact match is likely fine here
+                            const isAtOldPosition = Math.abs(obj.x - prevX) < 0.1 && Math.abs(obj.y - prevY) < 0.1;
+
+                            if (isAtOldPosition) {
+                                // It was static, so we propagate the new position
+                                newFrames[i] = {
+                                    ...frame,
+                                    objects: {
+                                        ...frame.objects,
+                                        [objectId]: {
+                                            ...obj,
+                                            x,
+                                            y,
+                                        },
                                     },
-                                },
-                            };
+                                };
+                            } else {
+                                // The object has moved in this frame (animation exists), so STOP propagating
+                                break;
+                            }
+                        } else {
+                            // Object doesn't exist in this future frame, stop propagating
+                            break;
                         }
-                        return frame;
-                    });
+                    }
+
                     return { frames: newFrames };
                 });
                 get().saveHistory();

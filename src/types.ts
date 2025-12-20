@@ -1,4 +1,4 @@
-export type PlayerType = 'player_offense' | 'player_defense' | 'ball' | 'screen' | 'cone';
+export type PlayerType = 'player_offense' | 'player_defense' | 'ball';
 
 export interface PlayObject {
     id: string;

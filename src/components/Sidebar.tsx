@@ -104,32 +104,7 @@ export const Sidebar = () => {
                     </div>
                 </div>
 
-                {/* Equipment Section */}
-                <div>
-                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">
-                        Equipment
-                    </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                        <DraggableItem
-                            type="screen"
-                            label="Screen"
-                            onDragStart={handleDragStart}
-                            icon={
-                                <div className="text-purple-500 font-bold text-2xl drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]">
-                                    ⊥
-                                </div>
-                            }
-                        />
-                        <DraggableItem
-                            type="cone"
-                            label="Cone"
-                            onDragStart={handleDragStart}
-                            icon={
-                                <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[24px] border-b-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]"></div>
-                            }
-                        />
-                    </div>
-                </div>
+
 
                 {/* Formation Presets Section */}
                 <div>

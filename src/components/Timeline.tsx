@@ -202,29 +202,7 @@ export const Timeline = () => {
                                             );
                                         }
 
-                                        if (obj.type === 'screen') {
-                                            return (
-                                                <div
-                                                    key={obj.id}
-                                                    className="absolute w-3 h-4 flex items-center justify-center"
-                                                    style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
-                                                >
-                                                    <div className="w-2 h-3 bg-purple-500/60 rounded-sm border border-purple-400" />
-                                                </div>
-                                            );
-                                        }
 
-                                        if (obj.type === 'cone') {
-                                            return (
-                                                <div
-                                                    key={obj.id}
-                                                    className="absolute"
-                                                    style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
-                                                >
-                                                    <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-orange-500" />
-                                                </div>
-                                            );
-                                        }
 
                                         return null;
                                     })}

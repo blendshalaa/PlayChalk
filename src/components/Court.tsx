@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Arc, Arrow, Text as KonvaText, Transformer } from 'react-konva';
+import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Arc, Arrow, Text as KonvaText } from 'react-konva';
 import Konva from 'konva';
 import { MousePointer2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -414,12 +414,36 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         if (!isPlaying || !stageRef.current) return;
         const layer = stageRef.current.getLayers()[1];
 
+        // Calculate initial time offset based on current frame
+        const initialTimeOffset = currentFrameIndex * playbackSpeed;
+        let startTime: number | null = null;
+
         const anim = new Konva.Animation((frame) => {
             if (!frame || frames.length <= 1) return;
+
+            if (startTime === null) {
+                startTime = frame.time;
+            }
+
+            // Calculate current animation time including the offset
+            const elapsedTime = frame.time - startTime;
+            const totalTime = elapsedTime + initialTimeOffset;
+
             const totalDuration = (frames.length - 1) * playbackSpeed;
-            const time = frame.time % totalDuration;
+
+            // Handle looping or stopping
+            if (totalTime >= totalDuration) {
+                if (usePlayStore.getState().isLooping) {
+                    startTime = frame.time - (totalTime % totalDuration) + initialTimeOffset; // Reset start time to loop smoothly
+                } else {
+                    usePlayStore.getState().togglePlay(); // Stop playing
+                    return;
+                }
+            }
+
+            const time = totalTime % totalDuration;
             const frameIndex = Math.floor(time / playbackSpeed);
-            const nextFrameIndex = frameIndex + 1;
+            const nextFrameIndex = Math.min(frameIndex + 1, frames.length - 1);
 
             // Use Easing
             const rawProgress = (time % playbackSpeed) / playbackSpeed;
@@ -427,17 +451,49 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
 
             const startFrame = frames[frameIndex];
             const endFrame = frames[nextFrameIndex];
+
+            // Update visual current frame index if it changed
+            if (frameIndex !== usePlayStore.getState().currentFrameIndex) {
+                // We don't want to trigger a re-render of the whole component if possible, 
+                // but we need to update the UI slider/counter. 
+                // Calling setCurrentFrame might be too heavy for 60fps loop?
+                // Actually, let's just let the animation drive the visuals and update the store index less frequently or just for UI?
+                // For now, let's NOT update the store index on every frame to avoid React render thrashing, 
+                // BUT the user might want to see the slider move.
+                // Let's try updating it, if it's slow we can optimize.
+                // usePlayStore.getState().setCurrentFrame(frameIndex); 
+                // Actually, updating state in animation loop is bad practice.
+                // Let's just interpolate the positions.
+            }
+
             if (!startFrame || !endFrame) return;
 
             Object.keys(startFrame.objects).forEach((objId) => {
                 const startObj = startFrame.objects[objId];
                 const endObj = endFrame.objects[objId];
                 const node = nodeRefs.current[objId];
+
+                // If object exists in both frames, interpolate
                 if (startObj && endObj && node) {
                     const x = startObj.x + (endObj.x - startObj.x) * progress;
                     const y = startObj.y + (endObj.y - startObj.y) * progress;
                     node.x(x);
                     node.y(y);
+                    node.visible(true);
+                }
+                // If object only exists in start frame (disappears)
+                else if (startObj && !endObj && node) {
+                    // Fade out or just disappear? For now, just stay at start pos until frame switch?
+                    // Or maybe hide it if progress > 0.5?
+                    node.visible(progress < 0.5);
+                    node.x(startObj.x);
+                    node.y(startObj.y);
+                }
+                // If object only exists in end frame (appears)
+                else if (!startObj && endObj && node) {
+                    node.visible(progress >= 0.5);
+                    node.x(endObj.x);
+                    node.y(endObj.y);
                 }
             });
         }, layer);
@@ -445,8 +501,23 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
         anim.start();
         return () => {
             anim.stop();
+            // Reset objects to their actual positions in the current frame when stopping
+            // This prevents them from getting stuck in interpolated positions
+            const currentFrame = frames[currentFrameIndex];
+            if (currentFrame) {
+                Object.keys(currentFrame.objects).forEach((objId) => {
+                    const obj = currentFrame.objects[objId];
+                    const node = nodeRefs.current[objId];
+                    if (node && obj) {
+                        node.x(obj.x);
+                        node.y(obj.y);
+                        node.visible(true);
+                    }
+                });
+                layer.batchDraw();
+            }
         };
-    }, [isPlaying, frames, playbackSpeed]);
+    }, [isPlaying, frames, playbackSpeed, currentFrameIndex]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -1034,19 +1105,7 @@ export const Court = ({ onRegisterExport }: CourtProps) => {
                                 })}
                             </Layer>
                             <Layer>
-                                {selectedObjectIds.length > 0 && selectedObjectIds.some(id => currentFrame?.objects[id]?.type === 'screen') && (
-                                    <Transformer
-                                        ref={transformerRef}
-                                        rotateEnabled={true}
-                                        enabledAnchors={['middle-left', 'middle-right']}
-                                        boundBoxFunc={(oldBox, newBox) => {
-                                            if (newBox.width < 20) {
-                                                return oldBox;
-                                            }
-                                            return newBox;
-                                        }}
-                                    />
-                                )}
+
 
                                 {/* Selection Rectangle */}
                                 {selectionRect && (
